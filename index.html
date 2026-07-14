@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>La Alacena — Lista de compras familiar</title>
+<title>La Despensa — Lista de compras familiar</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
@@ -196,7 +196,10 @@
     flex:1;
     font-size: 0.98rem;
     font-weight: 500;
+    cursor: text;
+    border-bottom: 1px dashed transparent;
   }
+  .item-name:hover{ border-bottom-color: var(--sage); }
   .item-row .del{
     background:none; border:none; color: var(--ink-soft);
     font-size: 1.1rem; cursor:pointer; opacity:0.5;
@@ -268,11 +271,15 @@
     line-height:1.25;
     margin-bottom: 10px;
     min-height: 2.4em;
+    cursor: text;
+    border-bottom: 1px dashed transparent;
   }
+  .jar-card .name:hover{ border-bottom-color: var(--sage); }
   .jar-card .qty-row{
     display:flex;
     align-items:center;
     justify-content:space-between;
+    gap: 6px;
   }
   .jar-card .qty-big{
     font-family:'IBM Plex Mono', monospace;
@@ -301,6 +308,43 @@
     cursor:pointer;
   }
   .jar-card .remove-x:hover{ opacity:1; color:var(--tomato); }
+  .jar-card.empty{ background: #E2E6DE; border-color: rgba(28,43,33,0.14); }
+  .jar-card.empty .strip{ opacity: 0.3; filter: grayscale(60%); }
+  .jar-card.empty .name{ color: var(--ink-soft); opacity: 0.65; }
+  .jar-card.empty .qty-big{ color: var(--tomato); }
+  .add-to-list-btn{
+    display:block;
+    width: 100%;
+    margin-top: 10px;
+    border: none;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    color: var(--ink-soft);
+    font-family:'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 0.7rem;
+    padding: 7px 10px;
+    border-radius: 999px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .add-to-list-btn:hover{ background: var(--citrus); color: var(--ink); border-color: var(--citrus); }
+  .add-to-list-btn:active{ transform: translateY(1px); }
+  .jar-card.empty .add-to-list-btn{ background: var(--citrus); color: var(--ink); border-color: var(--citrus); }
+
+  .name-edit-input{
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    color: var(--ink);
+    background: var(--bg);
+    border: 1px solid var(--sage-dark);
+    border-radius: 6px;
+    padding: 2px 6px;
+    width: 100%;
+    outline: none;
+    box-sizing: border-box;
+  }
 
   .toast{
     position: fixed;
@@ -353,7 +397,7 @@
   <header>
     <div>
       <span class="eyebrow">Hogar &middot; Compartido</span>
-      <h1>La Alacena</h1>
+      <h1>La Despensa</h1>
     </div>
     <div id="familyBadge"><span id="connDot"></span><span id="connText">conectando…</span></div>
   </header>
@@ -364,7 +408,7 @@
 
   <div class="tabs">
     <button class="tab active" data-view="lista">Lista de compras <span class="count" id="countLista">(0)</span></button>
-    <button class="tab" data-view="alacena">Alacena <span class="count" id="countAlacena">(0)</span></button>
+    <button class="tab" data-view="alacena">Despensa <span class="count" id="countAlacena">(0)</span></button>
   </div>
 
   <!-- VISTA 1: LISTA -->
@@ -385,14 +429,14 @@
       <p>Agrega el primer producto que necesiten comprar.</p>
     </div>
 
-    <button id="buyBtn" disabled>Compra realizada — llenar alacena</button>
+    <button id="buyBtn" disabled>Compra realizada — llenar despensa</button>
   </section>
 
   <!-- VISTA 2: ALACENA (CUADRÍCULA) -->
   <section class="view" id="view-alacena">
     <div class="grid" id="alacenaGrid"></div>
     <div id="alacenaEmpty" class="empty-state" style="display:none;">
-      <span class="glyph">La alacena está vacía</span>
+      <span class="glyph">La despensa está vacía</span>
       <p>Cuando marques "Compra realizada", los productos aparecerán aquí.</p>
     </div>
   </section>
@@ -501,6 +545,34 @@ function listenToData(){
    ===================================================================== */
 function uid(){ return 'i' + Date.now() + Math.random().toString(36).slice(2,7); }
 
+/* Convierte un elemento de nombre en un campo editable. Al guardar
+   (Enter o click afuera), llama a onSave(nuevoNombre). Con Escape cancela. */
+function editableName(el, currentName, onSave){
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.value = currentName;
+  input.className = 'name-edit-input';
+  el.replaceWith(input);
+  input.focus();
+  input.select();
+  let done = false;
+  function finish(shouldSave){
+    if(done) return;
+    done = true;
+    const val = input.value.trim();
+    if(shouldSave && val && val !== currentName){
+      onSave(val);
+    } else {
+      render();
+    }
+  }
+  input.addEventListener('blur', ()=> finish(true));
+  input.addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter'){ e.preventDefault(); finish(true); }
+    else if(e.key === 'Escape'){ finish(false); }
+  });
+}
+
 function writeLista(newLista){
   state.lista = newLista;
   if(firebaseReady){ db.ref('lista').set(newLista); }
@@ -572,7 +644,7 @@ document.getElementById('buyBtn').addEventListener('click', ()=>{
 
   writeAlacena(alacena);
   writeLista({});
-  showToast('¡Compra realizada! Productos añadidos a la alacena 🧺');
+  showToast('¡Compra realizada! Productos añadidos a la despensa 🧺');
   switchView('alacena');
 });
 
@@ -580,13 +652,27 @@ function alacenaAdjust(id, delta){
   const alacena = {...state.alacena};
   if(!alacena[id]) return;
   alacena[id].cantidad = Math.max(0, alacena[id].cantidad + delta);
-  if(alacena[id].cantidad === 0){ delete alacena[id]; }
   writeAlacena(alacena);
 }
 function alacenaRemove(id){
   const alacena = {...state.alacena};
   delete alacena[id];
   writeAlacena(alacena);
+}
+function sendToLista(id){
+  const item = state.alacena[id];
+  if(!item) return;
+  const lista = {...state.lista};
+  const existingId = Object.keys(lista).find(
+    k => lista[k].nombre.toLowerCase() === item.nombre.toLowerCase()
+  );
+  if(existingId){
+    lista[existingId].cantidad += 1;
+  } else {
+    lista[uid()] = { nombre: item.nombre, cantidad: 1 };
+  }
+  writeLista(lista);
+  showToast(`"${item.nombre}" agregado a la lista de compras`);
 }
 
 /* =====================================================================
@@ -606,7 +692,7 @@ function render(){
     li.className = 'item-row';
     li.setAttribute('data-id', id);
     li.innerHTML = `
-      <span class="item-name">${escapeHtml(item.nombre)}</span>
+      <span class="item-name" title="Toca para editar el nombre">${escapeHtml(item.nombre)}</span>
       <div class="qty-stepper">
         <button type="button" data-act="minus">−</button>
         <span>${item.cantidad}</span>
@@ -614,6 +700,13 @@ function render(){
       </div>
       <button class="del" title="Quitar">✕</button>
     `;
+    li.querySelector('.item-name').addEventListener('click', (e)=>{
+      editableName(e.currentTarget, item.nombre, (newName)=>{
+        const lista = {...state.lista};
+        lista[id].nombre = newName;
+        writeLista(lista);
+      });
+    });
     li.querySelector('[data-act="minus"]').addEventListener('click', ()=>{
       const lista = {...state.lista};
       lista[id].cantidad = Math.max(1, lista[id].cantidad - 1);
@@ -637,11 +730,11 @@ function render(){
 
   aEntries.forEach(([id, item])=>{
     const card = document.createElement('div');
-    card.className = 'jar-card';
+    card.className = 'jar-card' + (item.cantidad === 0 ? ' empty' : '');
     card.innerHTML = `
       <button class="remove-x" title="Eliminar">✕</button>
       <div class="strip"></div>
-      <div class="name">${escapeHtml(item.nombre)}</div>
+      <div class="name" title="Toca para editar el nombre">${escapeHtml(item.nombre)}</div>
       <div class="qty-row">
         <span class="qty-big">${item.cantidad}</span>
         <div class="mini-controls">
@@ -649,9 +742,18 @@ function render(){
           <button data-act="plus">+</button>
         </div>
       </div>
+      <button class="add-to-list-btn" type="button">+ Lista</button>
     `;
+    card.querySelector('.name').addEventListener('click', (e)=>{
+      editableName(e.currentTarget, item.nombre, (newName)=>{
+        const alacena = {...state.alacena};
+        alacena[id].nombre = newName;
+        writeAlacena(alacena);
+      });
+    });
     card.querySelector('[data-act="minus"]').addEventListener('click', ()=> alacenaAdjust(id, -1));
     card.querySelector('[data-act="plus"]').addEventListener('click', ()=> alacenaAdjust(id, 1));
+    card.querySelector('.add-to-list-btn').addEventListener('click', ()=> sendToLista(id));
     card.querySelector('.remove-x').addEventListener('click', ()=> alacenaRemove(id));
     gridEl.appendChild(card);
   });
