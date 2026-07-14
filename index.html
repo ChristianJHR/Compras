@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>La Alacena — Lista de compras familiar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #EFF3EE;
+    --paper: #FFFFFF;
+    --ink: #1C2B21;
+    --ink-soft: #4B5C4F;
+    --line: rgba(28,43,33,0.12);
+    --citrus: #E8B93E;
+    --tomato: #C1442D;
+    --sage: #7FA084;
+    --sage-dark: #4F7355;
+    --radius: 14px;
+    --shadow: 0 1px 2px rgba(28,43,33,0.06), 0 8px 24px -12px rgba(28,43,33,0.18);
+  }
+  *{ box-sizing: border-box; }
+  html, body{ margin:0; padding:0; }
+  body{
+    background: var(--bg);
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(28,43,33,0.05) 1px, transparent 0);
+    background-size: 22px 22px;
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap{
+    max-width: 620px;
+    margin: 0 auto;
+    padding: 28px 18px 100px;
+  }
+
+  /* HEADER */
+  header{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    margin-bottom: 22px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--ink);
+  }
+  header h1{
+    font-family:'Fraunces', serif;
+    font-style: italic;
+    font-weight: 600;
+    font-size: 2.1rem;
+    margin: 0;
+    line-height: 1;
+    letter-spacing: -0.01em;
+  }
+  header .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--sage-dark);
+    display:block;
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+  #familyBadge{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--ink-soft);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    padding: 5px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  #connDot{ display:inline-block; width:7px; height:7px; border-radius:50%; background: var(--sage); margin-right:6px; }
+  #connDot.off{ background: var(--tomato); }
+
+  /* TABS styled as clipped folder tabs */
+  .tabs{
+    display:flex;
+    gap: 6px;
+    margin-bottom: 20px;
+  }
+  .tab{
+    flex:1;
+    font-family:'Fraunces', serif;
+    font-weight: 600;
+    font-size: 1rem;
+    padding: 12px 10px 10px;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid var(--line);
+    color: var(--ink-soft);
+    cursor: pointer;
+    position: relative;
+    transition: color .15s ease;
+  }
+  .tab .count{
+    font-family:'IBM Plex Mono', monospace;
+    font-weight: 500;
+    font-size: 0.7rem;
+    margin-left: 6px;
+    color: inherit;
+    opacity: 0.7;
+  }
+  .tab.active{
+    color: var(--ink);
+    border-bottom: 2px solid var(--ink);
+  }
+  .tab.active::after{
+    content:'';
+    position:absolute;
+    bottom:-2px; left:0; right:0;
+    height:2px;
+    background: var(--citrus);
+  }
+
+  .view{ display:none; }
+  .view.active{ display:block; }
+
+  /* ADD ROW */
+  .add-row{
+    display:flex;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+  .add-row input[type=text]{
+    flex:1;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    padding: 12px 14px;
+    border-radius: var(--radius);
+    border: 1px solid var(--line);
+    background: var(--paper);
+    color: var(--ink);
+    outline: none;
+  }
+  .add-row input[type=text]:focus{ border-color: var(--sage-dark); }
+  .qty-stepper{
+    display:flex;
+    align-items:center;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow:hidden;
+  }
+  .qty-stepper button{
+    width: 34px; height: 100%;
+    border:none; background:transparent;
+    font-size: 1.1rem; color: var(--ink-soft);
+    cursor:pointer;
+    font-family:'IBM Plex Mono', monospace;
+  }
+  .qty-stepper span{
+    font-family:'IBM Plex Mono', monospace;
+    font-weight:600;
+    width: 26px;
+    text-align:center;
+    font-size:0.9rem;
+  }
+  .add-row button.add-btn{
+    background: var(--ink);
+    color: #fff;
+    border:none;
+    border-radius: var(--radius);
+    padding: 0 18px;
+    font-family:'Inter', sans-serif;
+    font-weight:600;
+    font-size:0.9rem;
+    cursor:pointer;
+  }
+  .add-row button.add-btn:active{ transform: translateY(1px); }
+
+  /* LIST ITEMS */
+  #listItems{ list-style:none; margin:0; padding:0; }
+  .item-row{
+    display:flex;
+    align-items:center;
+    gap: 12px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 12px 12px;
+    margin-bottom: 8px;
+    box-shadow: var(--shadow);
+    transition: opacity .4s ease, transform .4s ease;
+  }
+  .item-row.removing{ opacity:0; transform: translateX(30px); }
+  .item-name{
+    flex:1;
+    font-size: 0.98rem;
+    font-weight: 500;
+  }
+  .item-row .del{
+    background:none; border:none; color: var(--ink-soft);
+    font-size: 1.1rem; cursor:pointer; opacity:0.5;
+    padding: 4px;
+    line-height:1;
+  }
+  .item-row .del:hover{ opacity:1; color:var(--tomato); }
+
+  .empty-state{
+    text-align:center;
+    padding: 50px 20px;
+    color: var(--ink-soft);
+  }
+  .empty-state .glyph{
+    font-family:'Fraunces', serif;
+    font-style: italic;
+    font-size: 1.3rem;
+    display:block;
+    margin-bottom: 6px;
+    color: var(--ink);
+  }
+  .empty-state p{ font-size: 0.88rem; margin: 4px 0 0; }
+
+  /* BUY BUTTON */
+  #buyBtn{
+    display:block;
+    width:100%;
+    margin-top: 22px;
+    padding: 16px;
+    border-radius: var(--radius);
+    border: none;
+    background: var(--sage-dark);
+    color: #fff;
+    font-family:'Fraunces', serif;
+    font-weight: 600;
+    font-size: 1.05rem;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    box-shadow: var(--shadow);
+    transition: transform .12s ease, background .15s ease;
+  }
+  #buyBtn:disabled{ background: #B9C4BA; cursor:not-allowed; box-shadow:none; }
+  #buyBtn:not(:disabled):active{ transform: translateY(1px); }
+
+  /* GRID / ALACENA VIEW */
+  .grid{
+    display:grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+  }
+  .jar-card{
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 14px 12px 12px;
+    box-shadow: var(--shadow);
+    position:relative;
+  }
+  .jar-card .strip{
+    height: 5px;
+    width: 34px;
+    border-radius: 3px;
+    background: var(--citrus);
+    margin-bottom: 10px;
+  }
+  .jar-card .name{
+    font-size: 0.9rem;
+    font-weight: 600;
+    line-height:1.25;
+    margin-bottom: 10px;
+    min-height: 2.4em;
+  }
+  .jar-card .qty-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .jar-card .qty-big{
+    font-family:'IBM Plex Mono', monospace;
+    font-weight:600;
+    font-size: 1.6rem;
+    color: var(--sage-dark);
+  }
+  .jar-card .mini-controls{ display:flex; gap:4px; }
+  .jar-card .mini-controls button{
+    width: 26px; height:26px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--bg);
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 0.9rem;
+    cursor:pointer;
+    color: var(--ink);
+  }
+  .jar-card .remove-x{
+    position:absolute;
+    top: 8px; right: 10px;
+    border:none; background:none;
+    color: var(--ink-soft);
+    opacity: 0.35;
+    font-size: 0.95rem;
+    cursor:pointer;
+  }
+  .jar-card .remove-x:hover{ opacity:1; color:var(--tomato); }
+
+  .toast{
+    position: fixed;
+    bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--ink);
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 999px;
+    font-family:'Inter', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    box-shadow: var(--shadow);
+    opacity: 0;
+    pointer-events:none;
+    transition: opacity .25s ease, transform .25s ease;
+    z-index: 50;
+  }
+  .toast.show{ opacity:1; transform: translateX(-50%) translateY(0); }
+
+  .setup-banner{
+    background: #FBEFD9;
+    border: 1px solid #E8B93E;
+    color: #5A430E;
+    padding: 12px 14px;
+    border-radius: var(--radius);
+    font-size: 0.82rem;
+    margin-bottom: 18px;
+    line-height:1.5;
+  }
+  .setup-banner code{ background: rgba(0,0,0,0.06); padding:1px 5px; border-radius:4px; }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div>
+      <span class="eyebrow">Hogar &middot; Compartido</span>
+      <h1>La Alacena</h1>
+    </div>
+    <div id="familyBadge"><span id="connDot"></span><span id="connText">conectando…</span></div>
+  </header>
+
+  <div id="setupBanner" class="setup-banner" style="display:none;">
+    ⚠️ Falta configurar Firebase para que la lista se sincronice entre todos. Revisa las instrucciones al final del archivo <code>index.html</code> (busca <code>firebaseConfig</code>).
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-view="lista">Lista de compras <span class="count" id="countLista">(0)</span></button>
+    <button class="tab" data-view="alacena">Alacena <span class="count" id="countAlacena">(0)</span></button>
+  </div>
+
+  <!-- VISTA 1: LISTA -->
+  <section class="view active" id="view-lista">
+    <div class="add-row">
+      <input type="text" id="newItemName" placeholder="Ej. Leche, huevos, papel higiénico…" autocomplete="off">
+      <div class="qty-stepper">
+        <button type="button" id="qtyMinus">−</button>
+        <span id="qtyVal">1</span>
+        <button type="button" id="qtyPlus">+</button>
+      </div>
+      <button class="add-btn" id="addBtn">Agregar</button>
+    </div>
+
+    <ul id="listItems"></ul>
+    <div id="listEmpty" class="empty-state" style="display:none;">
+      <span class="glyph">La lista está vacía</span>
+      <p>Agrega el primer producto que necesiten comprar.</p>
+    </div>
+
+    <button id="buyBtn" disabled>Compra realizada — llenar alacena</button>
+  </section>
+
+  <!-- VISTA 2: ALACENA (CUADRÍCULA) -->
+  <section class="view" id="view-alacena">
+    <div class="grid" id="alacenaGrid"></div>
+    <div id="alacenaEmpty" class="empty-state" style="display:none;">
+      <span class="glyph">La alacena está vacía</span>
+      <p>Cuando marques "Compra realizada", los productos aparecerán aquí.</p>
+    </div>
+  </section>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Firebase (necesario para que TODA la familia vea y edite la MISMA lista en tiempo real) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script>
+/* =====================================================================
+   1) CONFIGURACIÓN DE FIREBASE
+   -----------------------------------------------------------------
+   Reemplaza el objeto de abajo con el que te dé TU proyecto de Firebase.
+   Instrucciones completas al final de este archivo (comentario grande).
+   ===================================================================== */
+const firebaseConfig = {
+  apiKey: "AIzaSyDNWZVKsqKBLGRakEeSc8EZO7vjo1XFwkg",
+  authDomain: "lista-de-compras-44cf2.firebaseapp.com",
+  databaseURL: "https://lista-de-compras-44cf2-default-rtdb.firebaseio.com",
+  projectId: "lista-de-compras-44cf2",
+  storageBucket: "lista-de-compras-44cf2.firebasestorage.app",
+  messagingSenderId: "505724508473",
+  appId: "1:505724508473:web:8474241009839405e0b0e8"
+};
+
+let db = null;
+let firebaseReady = false;
+
+function initFirebase(){
+  try{
+    if(firebaseConfig.apiKey === "AIzaSyDNWZVKsqKBLGRakEeSc8EZO7vjo1XFwkg"){
+      document.getElementById('setupBanner').style.display = 'block';
+      setConnStatus(false, 'sin configurar');
+      // Modo local de respaldo (solo en este dispositivo) para que puedas probar la app.
+      initLocalFallback();
+      return;
+    }
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.database();
+
+    // Inicia sesión anónima automáticamente (sin pedir nada al usuario).
+    // Esto es necesario porque las reglas de la base de datos ahora
+    // exigen estar autenticado (auth != null) para poder leer/escribir,
+    // lo cual bloquea a bots que escanean bases de datos públicas.
+    firebase.auth().signInAnonymously().catch((err)=>{
+      console.error('Error al iniciar sesión anónima:', err);
+      setConnStatus(false, 'error de acceso');
+    });
+
+    firebase.auth().onAuthStateChanged((user)=>{
+      if(user){
+        firebaseReady = true;
+        setConnStatus(true, 'sincronizado');
+        listenToData();
+      }
+    });
+
+    // Detecta conexión real con Firebase
+    firebase.database().ref('.info/connected').on('value', (snap)=>{
+      if(firebaseReady){
+        setConnStatus(!!snap.val(), snap.val() ? 'sincronizado' : 'sin conexión');
+      }
+    });
+  }catch(e){
+    console.error(e);
+    setConnStatus(false, 'error de conexión');
+    initLocalFallback();
+  }
+}
+
+function setConnStatus(ok, text){
+  document.getElementById('connText').textContent = text;
+  document.getElementById('connDot').classList.toggle('off', !ok);
+}
+
+/* =====================================================================
+   2) ESTADO Y MODO LOCAL DE RESPALDO (si no hay Firebase configurado)
+   ===================================================================== */
+let state = { lista: {}, alacena: {} };
+
+function initLocalFallback(){
+  const saved = localStorage.getItem('alacena_state');
+  if(saved){ try{ state = JSON.parse(saved); }catch(e){} }
+  render();
+}
+function saveLocalFallback(){
+  localStorage.setItem('alacena_state', JSON.stringify(state));
+}
+
+function listenToData(){
+  db.ref('lista').on('value', snap => {
+    state.lista = snap.val() || {};
+    render();
+  });
+  db.ref('alacena').on('value', snap => {
+    state.alacena = snap.val() || {};
+    render();
+  });
+}
+
+/* =====================================================================
+   3) ESCRITURA DE DATOS (funciona igual con Firebase o en modo local)
+   ===================================================================== */
+function uid(){ return 'i' + Date.now() + Math.random().toString(36).slice(2,7); }
+
+function writeLista(newLista){
+  state.lista = newLista;
+  if(firebaseReady){ db.ref('lista').set(newLista); }
+  else { saveLocalFallback(); render(); }
+}
+function writeAlacena(newAlacena){
+  state.alacena = newAlacena;
+  if(firebaseReady){ db.ref('alacena').set(newAlacena); }
+  else { saveLocalFallback(); render(); }
+}
+
+/* =====================================================================
+   4) LÓGICA DE LA APP
+   ===================================================================== */
+let pendingQty = 1;
+
+document.getElementById('qtyPlus').addEventListener('click', ()=>{
+  pendingQty++; document.getElementById('qtyVal').textContent = pendingQty;
+});
+document.getElementById('qtyMinus').addEventListener('click', ()=>{
+  pendingQty = Math.max(1, pendingQty-1); document.getElementById('qtyVal').textContent = pendingQty;
+});
+
+document.getElementById('addBtn').addEventListener('click', addItem);
+document.getElementById('newItemName').addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter') addItem();
+});
+
+function addItem(){
+  const input = document.getElementById('newItemName');
+  const name = input.value.trim();
+  if(!name) { input.focus(); return; }
+  const lista = {...state.lista};
+  lista[uid()] = { nombre: name, cantidad: pendingQty };
+  writeLista(lista);
+  input.value = '';
+  pendingQty = 1;
+  document.getElementById('qtyVal').textContent = 1;
+  input.focus();
+  showToast(`"${name}" agregado a la lista`);
+}
+
+function removeFromLista(id){
+  const row = document.querySelector(`[data-id="${id}"]`);
+  if(row){ row.classList.add('removing'); }
+  setTimeout(()=>{
+    const lista = {...state.lista};
+    delete lista[id];
+    writeLista(lista);
+  }, 250);
+}
+
+document.getElementById('buyBtn').addEventListener('click', ()=>{
+  const items = Object.entries(state.lista);
+  if(items.length === 0) return;
+
+  const alacena = {...state.alacena};
+  items.forEach(([id, item])=>{
+    // Si el producto ya existe en la alacena (por nombre), suma cantidades
+    const existingId = Object.keys(alacena).find(
+      k => alacena[k].nombre.toLowerCase() === item.nombre.toLowerCase()
+    );
+    if(existingId){
+      alacena[existingId].cantidad += item.cantidad;
+    } else {
+      alacena[uid()] = { nombre: item.nombre, cantidad: item.cantidad };
+    }
+  });
+
+  writeAlacena(alacena);
+  writeLista({});
+  showToast('¡Compra realizada! Productos añadidos a la alacena 🧺');
+  switchView('alacena');
+});
+
+function alacenaAdjust(id, delta){
+  const alacena = {...state.alacena};
+  if(!alacena[id]) return;
+  alacena[id].cantidad = Math.max(0, alacena[id].cantidad + delta);
+  if(alacena[id].cantidad === 0){ delete alacena[id]; }
+  writeAlacena(alacena);
+}
+function alacenaRemove(id){
+  const alacena = {...state.alacena};
+  delete alacena[id];
+  writeAlacena(alacena);
+}
+
+/* =====================================================================
+   5) RENDER
+   ===================================================================== */
+function render(){
+  // Lista
+  const listEl = document.getElementById('listItems');
+  const entries = Object.entries(state.lista || {});
+  listEl.innerHTML = '';
+  document.getElementById('listEmpty').style.display = entries.length ? 'none' : 'block';
+  document.getElementById('buyBtn').disabled = entries.length === 0;
+  document.getElementById('countLista').textContent = `(${entries.length})`;
+
+  entries.forEach(([id, item])=>{
+    const li = document.createElement('li');
+    li.className = 'item-row';
+    li.setAttribute('data-id', id);
+    li.innerHTML = `
+      <span class="item-name">${escapeHtml(item.nombre)}</span>
+      <div class="qty-stepper">
+        <button type="button" data-act="minus">−</button>
+        <span>${item.cantidad}</span>
+        <button type="button" data-act="plus">+</button>
+      </div>
+      <button class="del" title="Quitar">✕</button>
+    `;
+    li.querySelector('[data-act="minus"]').addEventListener('click', ()=>{
+      const lista = {...state.lista};
+      lista[id].cantidad = Math.max(1, lista[id].cantidad - 1);
+      writeLista(lista);
+    });
+    li.querySelector('[data-act="plus"]').addEventListener('click', ()=>{
+      const lista = {...state.lista};
+      lista[id].cantidad += 1;
+      writeLista(lista);
+    });
+    li.querySelector('.del').addEventListener('click', ()=> removeFromLista(id));
+    listEl.appendChild(li);
+  });
+
+  // Alacena
+  const gridEl = document.getElementById('alacenaGrid');
+  const aEntries = Object.entries(state.alacena || {}).sort((a,b)=> a[1].nombre.localeCompare(b[1].nombre));
+  gridEl.innerHTML = '';
+  document.getElementById('alacenaEmpty').style.display = aEntries.length ? 'none' : 'block';
+  document.getElementById('countAlacena').textContent = `(${aEntries.length})`;
+
+  aEntries.forEach(([id, item])=>{
+    const card = document.createElement('div');
+    card.className = 'jar-card';
+    card.innerHTML = `
+      <button class="remove-x" title="Eliminar">✕</button>
+      <div class="strip"></div>
+      <div class="name">${escapeHtml(item.nombre)}</div>
+      <div class="qty-row">
+        <span class="qty-big">${item.cantidad}</span>
+        <div class="mini-controls">
+          <button data-act="minus">−</button>
+          <button data-act="plus">+</button>
+        </div>
+      </div>
+    `;
+    card.querySelector('[data-act="minus"]').addEventListener('click', ()=> alacenaAdjust(id, -1));
+    card.querySelector('[data-act="plus"]').addEventListener('click', ()=> alacenaAdjust(id, 1));
+    card.querySelector('.remove-x').addEventListener('click', ()=> alacenaRemove(id));
+    gridEl.appendChild(card);
+  });
+}
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+/* =====================================================================
+   6) TABS / TOAST
+   ===================================================================== */
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click', ()=> switchView(tab.dataset.view));
+});
+function switchView(view){
+  document.querySelectorAll('.tab').forEach(t=> t.classList.toggle('active', t.dataset.view === view));
+  document.getElementById('view-lista').classList.toggle('active', view === 'lista');
+  document.getElementById('view-alacena').classList.toggle('active', view === 'alacena');
+}
+
+let toastTimer;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=> t.classList.remove('show'), 2600);
+}
+
+initFirebase();
+</script>
+
+<!--
+=========================================================================
+ CÓMO CONECTAR ESTA APP A FIREBASE (gratis) PARA QUE TODA TU FAMILIA
+ VEA Y EDITE LA MISMA LISTA EN TIEMPO REAL
+=========================================================================
+
+1. Ve a https://console.firebase.google.com y entra con tu cuenta de Google.
+2. Clic en "Agregar proyecto" (o "Add project"). Ponle un nombre, ej: "alacena-familia".
+   No necesitas activar Google Analytics, puedes desactivarlo.
+3. Dentro del proyecto, en el menú izquierdo ve a "Compilación" > "Realtime Database".
+4. Clic en "Crear base de datos". Elige la ubicación más cercana.
+5. Cuando pregunte por reglas de seguridad, elige "Comenzar en modo de PRUEBA"
+   (test mode) por ahora — lo cambiaremos en el siguiente paso.
+
+5.1. IMPORTANTE — activa el inicio de sesión anónimo:
+   - En el menú izquierdo ve a "Compilación" > "Authentication".
+   - Clic en "Comenzar" (Get started).
+   - En la pestaña "Sign-in method" / "Método de acceso", busca "Anónimo"
+     (Anonymous) en la lista de proveedores, ábrelo, actívalo con el switch
+     y clic en "Guardar".
+
+5.2. Ahora sí, pon reglas seguras. Ve a "Realtime Database" > pestaña
+   "Reglas" y reemplaza todo por esto, luego clic en "Publicar":
+
+      {
+        "rules": {
+          ".read": "auth != null",
+          ".write": "auth != null"
+        }
+      }
+
+   (Esto significa: solo alguien que haya iniciado sesión -aunque sea de
+   forma anónima y automática, como hace esta app- puede leer o escribir.
+   Esto bloquea a los bots que escanean bases de datos totalmente públicas.
+   Sigue sin ser una contraseña -cualquiera que abra tu link entra sin
+   pedirle nada-, pero ya no aparece como base de datos abierta al mundo.)
+
+6. Ve a "Configuración del proyecto" (el ícono de engrane arriba a la izquierda)
+   > pestaña "General" > baja hasta "Tus apps" > clic en el ícono </> (Web).
+7. Ponle un apodo a la app (ej. "alacena-web") y clic en "Registrar app".
+   Firebase te mostrará un bloque de código con un objeto llamado
+   "firebaseConfig" que se ve así:
+
+      const firebaseConfig = {
+        apiKey: "AIzaSy...",
+        authDomain: "alacena-familia.firebaseapp.com",
+        databaseURL: "https://alacena-familia-default-rtdb.firebaseio.com",
+        projectId: "alacena-familia",
+        storageBucket: "alacena-familia.appspot.com",
+        messagingSenderId: "123456789",
+        appId: "1:123456789:web:abcdef123456"
+      };
+
+8. Copia ESE objeto completo y pégalo en este archivo index.html, reemplazando
+   el objeto "firebaseConfig" que está cerca del inicio del <script> (búscalo
+   con Ctrl+F). Guarda el archivo.
+
+9. Sube el archivo a GitHub Pages (ver pasos abajo) y ¡listo! Todos los que
+   abran el link verán y editarán la misma lista en tiempo real.
+
+-------------------------------------------------------------------------
+ CÓMO SUBIRLO A GITHUB PAGES
+-------------------------------------------------------------------------
+1. Crea un repositorio nuevo en GitHub (puede ser privado o público).
+2. Sube este archivo y ponle de nombre exactamente: index.html
+3. Ve a la pestaña "Settings" del repositorio > "Pages" (menú izquierdo).
+4. En "Source" elige la rama "main" y la carpeta "/ (root)". Guarda.
+5. Espera 1-2 minutos. GitHub te dará un link tipo:
+   https://tu-usuario.github.io/nombre-del-repo/
+6. Comparte ese link con tu familia. Cualquiera que lo abra en su celular
+   o computadora verá y podrá modificar la misma lista al instante.
+=========================================================================
+-->
+</body>
+</html>
