@@ -147,9 +147,11 @@
     border: 1px solid var(--line);
     border-radius: var(--radius);
     overflow:hidden;
+    flex-shrink: 0;
   }
   .qty-stepper button{
     width: 34px; height: 100%;
+    flex-shrink: 0;
     border:none; background:transparent;
     font-size: 1.1rem; color: var(--ink-soft);
     cursor:pointer;
@@ -333,6 +335,15 @@
 
   @media (prefers-reduced-motion: reduce){
     *{ transition: none !important; animation: none !important; }
+  }
+
+  /* En pantallas angostas (celular), el input pasa a su propia fila
+     para que el contador de cantidad y el botón "Agregar" no se compriman */
+  @media (max-width: 480px){
+    .add-row{ flex-wrap: wrap; }
+    .add-row input[type=text]{ flex: 1 1 100%; }
+    .add-row .qty-stepper{ flex: 0 0 auto; }
+    .add-row button.add-btn{ flex: 1 1 auto; }
   }
 </style>
 </head>
