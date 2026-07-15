@@ -127,9 +127,10 @@
     display:flex;
     gap: 8px;
     margin-bottom: 18px;
+    flex-wrap: wrap;
   }
   .add-row input[type=text]{
-    flex:1;
+    flex: 1 1 100%;
     font-family: 'Inter', sans-serif;
     font-size: 0.95rem;
     padding: 12px 14px;
@@ -138,8 +139,30 @@
     background: var(--paper);
     color: var(--ink);
     outline: none;
+    min-width: 160px;
   }
   .add-row input[type=text]:focus{ border-color: var(--sage-dark); }
+
+  .unit-toggle{
+    display:flex;
+    flex-shrink: 0;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow:hidden;
+  }
+  .unit-toggle button{
+    border:none;
+    background: transparent;
+    color: var(--ink-soft);
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0 10px;
+    cursor: pointer;
+  }
+  .unit-toggle button.active{ background: var(--sage-dark); color: #fff; }
+
   .qty-stepper{
     display:flex;
     align-items:center;
@@ -157,12 +180,21 @@
     cursor:pointer;
     font-family:'IBM Plex Mono', monospace;
   }
-  .qty-stepper span{
+  .qty-stepper input[type=number]{
+    width: 52px;
+    border: none;
+    background: transparent;
     font-family:'IBM Plex Mono', monospace;
-    font-weight:600;
-    width: 26px;
-    text-align:center;
-    font-size:0.9rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-align: center;
+    color: var(--ink);
+    outline: none;
+    -moz-appearance: textfield;
+  }
+  .qty-stepper input[type=number]::-webkit-outer-spin-button,
+  .qty-stepper input[type=number]::-webkit-inner-spin-button{
+    -webkit-appearance: none; margin: 0;
   }
   .add-row button.add-btn{
     background: var(--ink);
@@ -174,6 +206,7 @@
     font-weight:600;
     font-size:0.9rem;
     cursor:pointer;
+    flex: 1 1 auto;
   }
   .add-row button.add-btn:active{ transform: translateY(1px); }
 
@@ -192,6 +225,24 @@
     transition: opacity .4s ease, transform .4s ease;
   }
   .item-row.removing{ opacity:0; transform: translateX(30px); }
+  .item-row.checked{ opacity: 0.6; }
+  .check-btn{
+    flex-shrink: 0;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    border: 2px solid var(--sage);
+    background: var(--paper);
+    color: #fff;
+    font-size: 0.75rem;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+  }
+  .check-btn.on{ background: var(--sage-dark); border-color: var(--sage-dark); }
+  .item-row.checked .item-name{ text-decoration: line-through; color: var(--ink-soft); }
   .item-name{
     flex:1;
     font-size: 0.98rem;
@@ -284,9 +335,12 @@
   .jar-card .qty-big{
     font-family:'IBM Plex Mono', monospace;
     font-weight:600;
-    font-size: 1.6rem;
+    font-size: 1.35rem;
     color: var(--sage-dark);
+    cursor: text;
+    border-bottom: 1px dashed transparent;
   }
+  .jar-card .qty-big:hover{ border-bottom-color: var(--sage); }
   .jar-card .mini-controls{ display:flex; gap:4px; }
   .jar-card .mini-controls button{
     width: 26px; height:26px;
@@ -346,6 +400,21 @@
     box-sizing: border-box;
   }
 
+  .qty-edit-input{
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    color: var(--ink);
+    background: var(--paper);
+    border: 1px solid var(--sage-dark);
+    border-radius: 6px;
+    padding: 1px 4px;
+    width: 60px;
+    text-align: center;
+    outline: none;
+    box-sizing: border-box;
+  }
+
   .toast{
     position: fixed;
     bottom: 24px; left: 50%;
@@ -381,8 +450,7 @@
     *{ transition: none !important; animation: none !important; }
   }
 
-  /* En pantallas angostas (celular), el input pasa a su propia fila
-     para que el contador de cantidad y el botón "Agregar" no se compriman */
+  /* En pantallas angostas (celular), el input pasa a su propia fila */
   @media (max-width: 480px){
     .add-row{ flex-wrap: wrap; }
     .add-row input[type=text]{ flex: 1 1 100%; }
@@ -415,9 +483,13 @@
   <section class="view active" id="view-lista">
     <div class="add-row">
       <input type="text" id="newItemName" placeholder="Ej. Leche, huevos, papel higiénico…" autocomplete="off">
+      <div class="unit-toggle" id="unitToggle">
+        <button type="button" class="active" data-unit="u">pza</button>
+        <button type="button" data-unit="g">g</button>
+      </div>
       <div class="qty-stepper">
         <button type="button" id="qtyMinus">−</button>
-        <span id="qtyVal">1</span>
+        <input type="number" id="qtyInput" value="1" min="0" title="Cantidad">
         <button type="button" id="qtyPlus">+</button>
       </div>
       <button class="add-btn" id="addBtn">Agregar</button>
@@ -444,16 +516,13 @@
 
 <div class="toast" id="toast"></div>
 
-<!-- Firebase (necesario para que TODA la familia vea y edite la MISMA lista en tiempo real) -->
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script>
 /* =====================================================================
    1) CONFIGURACIÓN DE FIREBASE
-   -----------------------------------------------------------------
-   Reemplaza el objeto de abajo con el que te dé TU proyecto de Firebase.
-   Instrucciones completas al final de este archivo (comentario grande).
    ===================================================================== */
 const firebaseConfig = {
   apiKey: "AIzaSyDNWZVKsqKBLGRakEeSc8EZO7vjo1XFwkg",
@@ -467,23 +536,30 @@ const firebaseConfig = {
 
 let db = null;
 let firebaseReady = false;
+let state = { lista: {}, alacena: {} };
+
+function loadCachedSnapshot(){
+  try{
+    const saved = localStorage.getItem('despensa_cache');
+    if(saved){ state = JSON.parse(saved); render(); }
+  }catch(e){}
+}
+function cacheSnapshot(){
+  try{ localStorage.setItem('despensa_cache', JSON.stringify(state)); }catch(e){}
+}
 
 function initFirebase(){
+  loadCachedSnapshot();
   try{
     if(firebaseConfig.apiKey === "TU_API_KEY"){
       document.getElementById('setupBanner').style.display = 'block';
       setConnStatus(false, 'sin configurar');
-      // Modo local de respaldo (solo en este dispositivo) para que puedas probar la app.
       initLocalFallback();
       return;
     }
     firebase.initializeApp(firebaseConfig);
     db = firebase.database();
 
-    // Inicia sesión anónima automáticamente (sin pedir nada al usuario).
-    // Esto es necesario porque las reglas de la base de datos ahora
-    // exigen estar autenticado (auth != null) para poder leer/escribir,
-    // lo cual bloquea a bots que escanean bases de datos públicas.
     firebase.auth().signInAnonymously().catch((err)=>{
       console.error('Error al iniciar sesión anónima:', err);
       setConnStatus(false, 'error de acceso');
@@ -497,7 +573,6 @@ function initFirebase(){
       }
     });
 
-    // Detecta conexión real con Firebase
     firebase.database().ref('.info/connected').on('value', (snap)=>{
       if(firebaseReady){
         setConnStatus(!!snap.val(), snap.val() ? 'sincronizado' : 'sin conexión');
@@ -516,10 +591,8 @@ function setConnStatus(ok, text){
 }
 
 /* =====================================================================
-   2) ESTADO Y MODO LOCAL DE RESPALDO (si no hay Firebase configurado)
+   2) MODO LOCAL DE RESPALDO
    ===================================================================== */
-let state = { lista: {}, alacena: {} };
-
 function initLocalFallback(){
   const saved = localStorage.getItem('alacena_state');
   if(saved){ try{ state = JSON.parse(saved); }catch(e){} }
@@ -533,20 +606,21 @@ function listenToData(){
   db.ref('lista').on('value', snap => {
     state.lista = snap.val() || {};
     render();
+    cacheSnapshot();
   });
   db.ref('alacena').on('value', snap => {
     state.alacena = snap.val() || {};
     render();
+    cacheSnapshot();
   });
 }
 
 /* =====================================================================
-   3) ESCRITURA DE DATOS (funciona igual con Firebase o en modo local)
+   3) ESCRITURA DE DATOS Y UTILIDADES
    ===================================================================== */
 function uid(){ return 'i' + Date.now() + Math.random().toString(36).slice(2,7); }
 
-/* Convierte un elemento de nombre en un campo editable. Al guardar
-   (Enter o click afuera), llama a onSave(nuevoNombre). Con Escape cancela. */
+/* Nombre editable */
 function editableName(el, currentName, onSave){
   const input = document.createElement('input');
   input.type = 'text';
@@ -560,17 +634,52 @@ function editableName(el, currentName, onSave){
     if(done) return;
     done = true;
     const val = input.value.trim();
-    if(shouldSave && val && val !== currentName){
-      onSave(val);
-    } else {
-      render();
-    }
+    if(shouldSave && val && val !== currentName){ onSave(val); }
+    else { render(); }
   }
   input.addEventListener('blur', ()=> finish(true));
   input.addEventListener('keydown', (e)=>{
     if(e.key === 'Enter'){ e.preventDefault(); finish(true); }
     else if(e.key === 'Escape'){ finish(false); }
   });
+}
+
+/* Cantidad editable */
+function editableQty(el, currentItem, onSave){
+  const input = document.createElement('input');
+  input.type = 'number';
+  input.min = '0';
+  input.step = currentItem.unidad === 'g' ? '10' : '1';
+  input.value = currentItem.cantidad;
+  input.className = 'qty-edit-input';
+  el.replaceWith(input);
+  input.focus();
+  input.select();
+  let done = false;
+  function finish(shouldSave){
+    if(done) return;
+    done = true;
+    const val = Math.max(0, Math.round(Number(input.value)));
+    if(shouldSave && !isNaN(val) && val !== currentItem.cantidad){ onSave(val); }
+    else { render(); }
+  }
+  input.addEventListener('blur', ()=> finish(true));
+  input.addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter'){ e.preventDefault(); finish(true); }
+    else if(e.key === 'Escape'){ finish(false); }
+  });
+}
+
+/* Formato de cantidad con conversión a kg */
+function formatQty(item){
+  if(item.unidad === 'g'){
+    if(item.cantidad >= 1000){
+      const kg = item.cantidad / 1000;
+      return (Number.isInteger(kg) ? String(kg) : kg.toFixed(1)) + ' kg';
+    }
+    return item.cantidad + ' g';
+  }
+  return String(item.cantidad);
 }
 
 function writeLista(newLista){
@@ -585,15 +694,28 @@ function writeAlacena(newAlacena){
 }
 
 /* =====================================================================
-   4) LÓGICA DE LA APP
+   4) FILA "AGREGAR PRODUCTO"
    ===================================================================== */
-let pendingQty = 1;
+let pendingUnit = 'u';
+const qtyInput = document.getElementById('qtyInput');
+
+document.querySelectorAll('#unitToggle button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    pendingUnit = btn.dataset.unit;
+    document.querySelectorAll('#unitToggle button').forEach(b=> b.classList.toggle('active', b === btn));
+    qtyInput.value = pendingUnit === 'g' ? 100 : 1;
+    qtyInput.step = pendingUnit === 'g' ? 50 : 1;
+  });
+});
 
 document.getElementById('qtyPlus').addEventListener('click', ()=>{
-  pendingQty++; document.getElementById('qtyVal').textContent = pendingQty;
+  const step = pendingUnit === 'g' ? 50 : 1;
+  qtyInput.value = Math.max(0, (Number(qtyInput.value) || 0) + step);
 });
 document.getElementById('qtyMinus').addEventListener('click', ()=>{
-  pendingQty = Math.max(1, pendingQty-1); document.getElementById('qtyVal').textContent = pendingQty;
+  const step = pendingUnit === 'g' ? 50 : 1;
+  const min = pendingUnit === 'g' ? 0 : 1;
+  qtyInput.value = Math.max(min, (Number(qtyInput.value) || 0) - step);
 });
 
 document.getElementById('addBtn').addEventListener('click', addItem);
@@ -601,16 +723,23 @@ document.getElementById('newItemName').addEventListener('keydown', (e)=>{
   if(e.key === 'Enter') addItem();
 });
 
+function resetAddRow(){
+  pendingUnit = 'u';
+  document.querySelectorAll('#unitToggle button').forEach(b=> b.classList.toggle('active', b.dataset.unit === 'u'));
+  qtyInput.value = 1;
+  qtyInput.step = 1;
+}
+
 function addItem(){
   const input = document.getElementById('newItemName');
   const name = input.value.trim();
   if(!name) { input.focus(); return; }
+  const cantidad = Math.max(0, Math.round(Number(qtyInput.value)) || 0);
   const lista = {...state.lista};
-  lista[uid()] = { nombre: name, cantidad: pendingQty };
+  lista[uid()] = { nombre: name, cantidad: cantidad || (pendingUnit === 'g' ? 100 : 1), unidad: pendingUnit };
   writeLista(lista);
   input.value = '';
-  pendingQty = 1;
-  document.getElementById('qtyVal').textContent = 1;
+  resetAddRow();
   input.focus();
   showToast(`"${name}" agregado a la lista`);
 }
@@ -631,14 +760,13 @@ document.getElementById('buyBtn').addEventListener('click', ()=>{
 
   const alacena = {...state.alacena};
   items.forEach(([id, item])=>{
-    // Si el producto ya existe en la alacena (por nombre), suma cantidades
     const existingId = Object.keys(alacena).find(
       k => alacena[k].nombre.toLowerCase() === item.nombre.toLowerCase()
     );
     if(existingId){
       alacena[existingId].cantidad += item.cantidad;
     } else {
-      alacena[uid()] = { nombre: item.nombre, cantidad: item.cantidad };
+      alacena[uid()] = { nombre: item.nombre, cantidad: item.cantidad, unidad: item.unidad || 'u' };
     }
   });
 
@@ -650,8 +778,10 @@ document.getElementById('buyBtn').addEventListener('click', ()=>{
 
 function alacenaAdjust(id, delta){
   const alacena = {...state.alacena};
-  if(!alacena[id]) return;
-  alacena[id].cantidad = Math.max(0, alacena[id].cantidad + delta);
+  const item = alacena[id];
+  if(!item) return;
+  const step = item.unidad === 'g' ? 50 : 1;
+  item.cantidad = Math.max(0, item.cantidad + (delta > 0 ? step : -step));
   writeAlacena(alacena);
 }
 function alacenaRemove(id){
@@ -662,14 +792,15 @@ function alacenaRemove(id){
 function sendToLista(id){
   const item = state.alacena[id];
   if(!item) return;
+  const addAmount = item.unidad === 'g' ? 500 : 1;
   const lista = {...state.lista};
   const existingId = Object.keys(lista).find(
     k => lista[k].nombre.toLowerCase() === item.nombre.toLowerCase()
   );
   if(existingId){
-    lista[existingId].cantidad += 1;
+    lista[existingId].cantidad += addAmount;
   } else {
-    lista[uid()] = { nombre: item.nombre, cantidad: 1 };
+    lista[uid()] = { nombre: item.nombre, cantidad: addAmount, unidad: item.unidad || 'u' };
   }
   writeLista(lista);
   showToast(`"${item.nombre}" agregado a la lista de compras`);
@@ -679,27 +810,35 @@ function sendToLista(id){
    5) RENDER
    ===================================================================== */
 function render(){
-  // Lista
+  // Lista de compras - orden: no marcados primero, marcados al final
   const listEl = document.getElementById('listItems');
-  const entries = Object.entries(state.lista || {});
+  const entries = Object.entries(state.lista || {})
+    .sort((a,b)=> (a[1].marcado ? 1 : 0) - (b[1].marcado ? 1 : 0));
   listEl.innerHTML = '';
   document.getElementById('listEmpty').style.display = entries.length ? 'none' : 'block';
   document.getElementById('buyBtn').disabled = entries.length === 0;
   document.getElementById('countLista').textContent = `(${entries.length})`;
 
   entries.forEach(([id, item])=>{
+    item.unidad = item.unidad || 'u';
     const li = document.createElement('li');
-    li.className = 'item-row';
+    li.className = 'item-row' + (item.marcado ? ' checked' : '');
     li.setAttribute('data-id', id);
     li.innerHTML = `
+      <button class="check-btn${item.marcado ? ' on' : ''}" data-act="check" title="Marcar como en el carrito">${item.marcado ? '✓' : ''}</button>
       <span class="item-name" title="Toca para editar el nombre">${escapeHtml(item.nombre)}</span>
       <div class="qty-stepper">
         <button type="button" data-act="minus">−</button>
-        <span>${item.cantidad}</span>
+        <span data-act="editqty" title="Toca para escribir la cantidad exacta">${formatQty(item)}</span>
         <button type="button" data-act="plus">+</button>
       </div>
       <button class="del" title="Quitar">✕</button>
     `;
+    li.querySelector('[data-act="check"]').addEventListener('click', ()=>{
+      const lista = {...state.lista};
+      lista[id].marcado = !lista[id].marcado;
+      writeLista(lista);
+    });
     li.querySelector('.item-name').addEventListener('click', (e)=>{
       editableName(e.currentTarget, item.nombre, (newName)=>{
         const lista = {...state.lista};
@@ -709,19 +848,28 @@ function render(){
     });
     li.querySelector('[data-act="minus"]').addEventListener('click', ()=>{
       const lista = {...state.lista};
-      lista[id].cantidad = Math.max(1, lista[id].cantidad - 1);
+      const step = item.unidad === 'g' ? 50 : 1;
+      const min = item.unidad === 'g' ? 0 : 1;
+      lista[id].cantidad = Math.max(min, lista[id].cantidad - step);
       writeLista(lista);
     });
     li.querySelector('[data-act="plus"]').addEventListener('click', ()=>{
       const lista = {...state.lista};
-      lista[id].cantidad += 1;
+      lista[id].cantidad += (item.unidad === 'g' ? 50 : 1);
       writeLista(lista);
+    });
+    li.querySelector('[data-act="editqty"]').addEventListener('click', (e)=>{
+      editableQty(e.currentTarget, item, (newVal)=>{
+        const lista = {...state.lista};
+        lista[id].cantidad = newVal;
+        writeLista(lista);
+      });
     });
     li.querySelector('.del').addEventListener('click', ()=> removeFromLista(id));
     listEl.appendChild(li);
   });
 
-  // Alacena
+  // Despensa
   const gridEl = document.getElementById('alacenaGrid');
   const aEntries = Object.entries(state.alacena || {}).sort((a,b)=> a[1].nombre.localeCompare(b[1].nombre));
   gridEl.innerHTML = '';
@@ -729,6 +877,7 @@ function render(){
   document.getElementById('countAlacena').textContent = `(${aEntries.length})`;
 
   aEntries.forEach(([id, item])=>{
+    item.unidad = item.unidad || 'u';
     const card = document.createElement('div');
     card.className = 'jar-card' + (item.cantidad === 0 ? ' empty' : '');
     card.innerHTML = `
@@ -736,7 +885,7 @@ function render(){
       <div class="strip"></div>
       <div class="name" title="Toca para editar el nombre">${escapeHtml(item.nombre)}</div>
       <div class="qty-row">
-        <span class="qty-big">${item.cantidad}</span>
+        <span class="qty-big" title="Toca para escribir la cantidad exacta">${formatQty(item)}</span>
         <div class="mini-controls">
           <button data-act="minus">−</button>
           <button data-act="plus">+</button>
@@ -748,6 +897,13 @@ function render(){
       editableName(e.currentTarget, item.nombre, (newName)=>{
         const alacena = {...state.alacena};
         alacena[id].nombre = newName;
+        writeAlacena(alacena);
+      });
+    });
+    card.querySelector('.qty-big').addEventListener('click', (e)=>{
+      editableQty(e.currentTarget, item, (newVal)=>{
+        const alacena = {...state.alacena};
+        alacena[id].cantidad = newVal;
         writeAlacena(alacena);
       });
     });
