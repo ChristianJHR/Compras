@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>La Despensa — Lista de compras familiar</title>
+<meta name="theme-color" content="#1C2B21">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="La Despensa">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
@@ -1010,6 +1016,16 @@ if(document.documentElement.requestFullscreen){
 }
 
 initFirebase();
+
+// Registra el Service Worker: permite que el navegador guarde una copia
+// de la app para poder abrirla aunque no haya internet.
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(err=>{
+      console.log('No se pudo registrar el service worker:', err);
+    });
+  });
+}
 </script>
 
 <!--
@@ -1017,72 +1033,8 @@ initFirebase();
  CÓMO CONECTAR ESTA APP A FIREBASE (gratis) PARA QUE TODA TU FAMILIA
  VEA Y EDITE LA MISMA LISTA EN TIEMPO REAL
 =========================================================================
-
-1. Ve a https://console.firebase.google.com y entra con tu cuenta de Google.
-2. Clic en "Agregar proyecto" (o "Add project"). Ponle un nombre, ej: "alacena-familia".
-   No necesitas activar Google Analytics, puedes desactivarlo.
-3. Dentro del proyecto, en el menú izquierdo ve a "Compilación" > "Realtime Database".
-4. Clic en "Crear base de datos". Elige la ubicación más cercana.
-5. Cuando pregunte por reglas de seguridad, elige "Comenzar en modo de PRUEBA"
-   (test mode) por ahora — lo cambiaremos en el siguiente paso.
-
-5.1. IMPORTANTE — activa el inicio de sesión anónimo:
-   - En el menú izquierdo ve a "Compilación" > "Authentication".
-   - Clic en "Comenzar" (Get started).
-   - En la pestaña "Sign-in method" / "Método de acceso", busca "Anónimo"
-     (Anonymous) en la lista de proveedores, ábrelo, actívalo con el switch
-     y clic en "Guardar".
-
-5.2. Ahora sí, pon reglas seguras. Ve a "Realtime Database" > pestaña
-   "Reglas" y reemplaza todo por esto, luego clic en "Publicar":
-
-      {
-        "rules": {
-          ".read": "auth != null",
-          ".write": "auth != null"
-        }
-      }
-
-   (Esto significa: solo alguien que haya iniciado sesión -aunque sea de
-   forma anónima y automática, como hace esta app- puede leer o escribir.
-   Esto bloquea a los bots que escanean bases de datos totalmente públicas.
-   Sigue sin ser una contraseña -cualquiera que abra tu link entra sin
-   pedirle nada-, pero ya no aparece como base de datos abierta al mundo.)
-
-6. Ve a "Configuración del proyecto" (el ícono de engrane arriba a la izquierda)
-   > pestaña "General" > baja hasta "Tus apps" > clic en el ícono </> (Web).
-7. Ponle un apodo a la app (ej. "alacena-web") y clic en "Registrar app".
-   Firebase te mostrará un bloque de código con un objeto llamado
-   "firebaseConfig" que se ve así:
-
-      const firebaseConfig = {
-        apiKey: "AIzaSy...",
-        authDomain: "alacena-familia.firebaseapp.com",
-        databaseURL: "https://alacena-familia-default-rtdb.firebaseio.com",
-        projectId: "alacena-familia",
-        storageBucket: "alacena-familia.appspot.com",
-        messagingSenderId: "123456789",
-        appId: "1:123456789:web:abcdef123456"
-      };
-
-8. Copia ESE objeto completo y pégalo en este archivo index.html, reemplazando
-   el objeto "firebaseConfig" que está cerca del inicio del <script> (búscalo
-   con Ctrl+F). Guarda el archivo.
-
-9. Sube el archivo a GitHub Pages (ver pasos abajo) y ¡listo! Todos los que
-   abran el link verán y editarán la misma lista en tiempo real.
-
--------------------------------------------------------------------------
- CÓMO SUBIRLO A GITHUB PAGES
--------------------------------------------------------------------------
-1. Crea un repositorio nuevo en GitHub (puede ser privado o público).
-2. Sube este archivo y ponle de nombre exactamente: index.html
-3. Ve a la pestaña "Settings" del repositorio > "Pages" (menú izquierdo).
-4. En "Source" elige la rama "main" y la carpeta "/ (root)". Guarda.
-5. Espera 1-2 minutos. GitHub te dará un link tipo:
-   https://tu-usuario.github.io/nombre-del-repo/
-6. Comparte ese link con tu familia. Cualquiera que lo abra en su celular
-   o computadora verá y podrá modificar la misma lista al instante.
+ (Ya está configurada con tu proyecto de Firebase real — esta sección
+ es solo referencia por si algún día necesitas reconectarla.)
 =========================================================================
 -->
 </body>
