@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>La Despensa — Lista de compras familiar</title>
+<meta name="theme-color" content="#1C2B21">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="La Despensa">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
@@ -38,7 +44,6 @@
     padding: 28px 18px 100px;
   }
 
-  /* HEADER */
   header{
     display:flex;
     align-items:flex-end;
@@ -79,12 +84,7 @@
   #connDot{ display:inline-block; width:7px; height:7px; border-radius:50%; background: var(--sage); margin-right:6px; }
   #connDot.off{ background: var(--tomato); }
 
-  /* TABS styled as clipped folder tabs */
-  .tabs{
-    display:flex;
-    gap: 6px;
-    margin-bottom: 20px;
-  }
+  .tabs{ display:flex; gap: 6px; margin-bottom: 20px; }
   .tab{
     flex:1;
     font-family:'Fraunces', serif;
@@ -107,30 +107,18 @@
     color: inherit;
     opacity: 0.7;
   }
-  .tab.active{
-    color: var(--ink);
-    border-bottom: 2px solid var(--ink);
-  }
+  .tab.active{ color: var(--ink); border-bottom: 2px solid var(--ink); }
   .tab.active::after{
-    content:'';
-    position:absolute;
-    bottom:-2px; left:0; right:0;
-    height:2px;
+    content:''; position:absolute; bottom:-2px; left:0; right:0; height:2px;
     background: var(--citrus);
   }
 
   .view{ display:none; }
   .view.active{ display:block; }
 
-  /* ADD ROW */
-  .add-row{
-    display:flex;
-    gap: 8px;
-    margin-bottom: 18px;
-    flex-wrap: wrap;
-  }
+  .add-row{ display:flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
   .add-row input[type=text]{
-    flex: 1 1 100%;
+    flex:1 1 100%;
     font-family: 'Inter', sans-serif;
     font-size: 0.95rem;
     padding: 12px 14px;
@@ -180,6 +168,17 @@
     cursor:pointer;
     font-family:'IBM Plex Mono', monospace;
   }
+  .qty-stepper span{
+    font-family:'IBM Plex Mono', monospace;
+    font-weight:600;
+    min-width: 30px;
+    text-align:center;
+    font-size:0.85rem;
+    padding: 0 2px;
+    cursor: text;
+    border-bottom: 1px dashed transparent;
+  }
+  .qty-stepper span:hover{ border-bottom-color: var(--sage); }
   .qty-stepper input[type=number]{
     width: 52px;
     border: none;
@@ -196,6 +195,7 @@
   .qty-stepper input[type=number]::-webkit-inner-spin-button{
     -webkit-appearance: none; margin: 0;
   }
+
   .add-row button.add-btn{
     background: var(--ink);
     color: #fff;
@@ -210,7 +210,6 @@
   }
   .add-row button.add-btn:active{ transform: translateY(1px); }
 
-  /* LIST ITEMS */
   #listItems{ list-style:none; margin:0; padding:0; }
   .item-row{
     display:flex;
@@ -243,6 +242,7 @@
   }
   .check-btn.on{ background: var(--sage-dark); border-color: var(--sage-dark); }
   .item-row.checked .item-name{ text-decoration: line-through; color: var(--ink-soft); }
+
   .item-name{
     flex:1;
     font-size: 0.98rem;
@@ -254,112 +254,56 @@
   .item-row .del{
     background:none; border:none; color: var(--ink-soft);
     font-size: 1.1rem; cursor:pointer; opacity:0.5;
-    padding: 4px;
-    line-height:1;
+    padding: 4px; line-height:1;
   }
   .item-row .del:hover{ opacity:1; color:var(--tomato); }
 
-  .empty-state{
-    text-align:center;
-    padding: 50px 20px;
-    color: var(--ink-soft);
-  }
+  .empty-state{ text-align:center; padding: 50px 20px; color: var(--ink-soft); }
   .empty-state .glyph{
-    font-family:'Fraunces', serif;
-    font-style: italic;
-    font-size: 1.3rem;
-    display:block;
-    margin-bottom: 6px;
-    color: var(--ink);
+    font-family:'Fraunces', serif; font-style: italic; font-size: 1.3rem;
+    display:block; margin-bottom: 6px; color: var(--ink);
   }
   .empty-state p{ font-size: 0.88rem; margin: 4px 0 0; }
 
-  /* BUY BUTTON */
   #buyBtn{
-    display:block;
-    width:100%;
-    margin-top: 22px;
-    padding: 16px;
-    border-radius: var(--radius);
-    border: none;
-    background: var(--sage-dark);
-    color: #fff;
-    font-family:'Fraunces', serif;
-    font-weight: 600;
-    font-size: 1.05rem;
-    letter-spacing: 0.01em;
-    cursor: pointer;
-    box-shadow: var(--shadow);
+    display:block; width:100%; margin-top: 22px; padding: 16px;
+    border-radius: var(--radius); border: none;
+    background: var(--sage-dark); color: #fff;
+    font-family:'Fraunces', serif; font-weight: 600; font-size: 1.05rem;
+    letter-spacing: 0.01em; cursor: pointer; box-shadow: var(--shadow);
     transition: transform .12s ease, background .15s ease;
   }
   #buyBtn:disabled{ background: #B9C4BA; cursor:not-allowed; box-shadow:none; }
   #buyBtn:not(:disabled):active{ transform: translateY(1px); }
 
-  /* GRID / ALACENA VIEW */
-  .grid{
-    display:grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 12px;
-  }
+  .grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
   .jar-card{
-    background: var(--paper);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    padding: 14px 12px 12px;
-    box-shadow: var(--shadow);
-    position:relative;
+    background: var(--paper); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 14px 12px 12px;
+    box-shadow: var(--shadow); position:relative;
   }
-  .jar-card .strip{
-    height: 5px;
-    width: 34px;
-    border-radius: 3px;
-    background: var(--citrus);
-    margin-bottom: 10px;
-  }
+  .jar-card .strip{ height: 5px; width: 34px; border-radius: 3px; background: var(--citrus); margin-bottom: 10px; }
   .jar-card .name{
-    font-size: 0.9rem;
-    font-weight: 600;
-    line-height:1.25;
-    margin-bottom: 10px;
-    min-height: 2.4em;
-    cursor: text;
+    font-size: 0.9rem; font-weight: 600; line-height:1.25;
+    margin-bottom: 10px; min-height: 2.4em; cursor: text;
     border-bottom: 1px dashed transparent;
   }
   .jar-card .name:hover{ border-bottom-color: var(--sage); }
-  .jar-card .qty-row{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap: 6px;
-  }
+  .jar-card .qty-row{ display:flex; align-items:center; justify-content:space-between; gap: 6px; }
   .jar-card .qty-big{
-    font-family:'IBM Plex Mono', monospace;
-    font-weight:600;
-    font-size: 1.35rem;
-    color: var(--sage-dark);
-    cursor: text;
-    border-bottom: 1px dashed transparent;
+    font-family:'IBM Plex Mono', monospace; font-weight:600; font-size: 1.35rem;
+    color: var(--sage-dark); cursor: text; border-bottom: 1px dashed transparent;
   }
   .jar-card .qty-big:hover{ border-bottom-color: var(--sage); }
   .jar-card .mini-controls{ display:flex; gap:4px; }
   .jar-card .mini-controls button{
-    width: 26px; height:26px;
-    border-radius: 8px;
-    border: 1px solid var(--line);
-    background: var(--bg);
-    font-family:'IBM Plex Mono', monospace;
-    font-size: 0.9rem;
-    cursor:pointer;
-    color: var(--ink);
+    width: 26px; height:26px; border-radius: 8px; border: 1px solid var(--line);
+    background: var(--bg); font-family:'IBM Plex Mono', monospace; font-size: 0.9rem;
+    cursor:pointer; color: var(--ink);
   }
   .jar-card .remove-x{
-    position:absolute;
-    top: 8px; right: 10px;
-    border:none; background:none;
-    color: var(--ink-soft);
-    opacity: 0.35;
-    font-size: 0.95rem;
-    cursor:pointer;
+    position:absolute; top: 8px; right: 10px; border:none; background:none;
+    color: var(--ink-soft); opacity: 0.35; font-size: 0.95rem; cursor:pointer;
   }
   .jar-card .remove-x:hover{ opacity:1; color:var(--tomato); }
   .jar-card.empty{ background: #E2E6DE; border-color: rgba(28,43,33,0.14); }
@@ -367,96 +311,43 @@
   .jar-card.empty .name{ color: var(--ink-soft); opacity: 0.65; }
   .jar-card.empty .qty-big{ color: var(--tomato); }
   .add-to-list-btn{
-    display:block;
-    width: 100%;
-    margin-top: 10px;
-    border: none;
-    background: var(--bg);
-    border: 1px solid var(--line);
-    color: var(--ink-soft);
-    font-family:'Inter', sans-serif;
-    font-weight: 600;
-    font-size: 0.7rem;
-    padding: 7px 10px;
-    border-radius: 999px;
-    cursor: pointer;
-    white-space: nowrap;
+    display:block; width: 100%; margin-top: 10px; border: none;
+    background: var(--bg); border: 1px solid var(--line); color: var(--ink-soft);
+    font-family:'Inter', sans-serif; font-weight: 600; font-size: 0.7rem;
+    padding: 7px 10px; border-radius: 999px; cursor: pointer; white-space: nowrap;
   }
   .add-to-list-btn:hover{ background: var(--citrus); color: var(--ink); border-color: var(--citrus); }
   .add-to-list-btn:active{ transform: translateY(1px); }
   .jar-card.empty .add-to-list-btn{ background: var(--citrus); color: var(--ink); border-color: var(--citrus); }
 
   .name-edit-input{
-    font-family: inherit;
-    font-size: inherit;
-    font-weight: inherit;
-    color: var(--ink);
-    background: var(--bg);
-    border: 1px solid var(--sage-dark);
-    border-radius: 6px;
-    padding: 2px 6px;
-    width: 100%;
-    outline: none;
-    box-sizing: border-box;
+    font-family: inherit; font-size: inherit; font-weight: inherit; color: var(--ink);
+    background: var(--bg); border: 1px solid var(--sage-dark); border-radius: 6px;
+    padding: 2px 6px; width: 100%; outline: none; box-sizing: border-box;
   }
-
   .qty-edit-input{
-    font-family: inherit;
-    font-size: inherit;
-    font-weight: inherit;
-    color: var(--ink);
-    background: var(--paper);
-    border: 1px solid var(--sage-dark);
-    border-radius: 6px;
-    padding: 1px 4px;
-    width: 60px;
-    text-align: center;
-    outline: none;
-    box-sizing: border-box;
+    font-family: inherit; font-size: inherit; font-weight: inherit; color: var(--ink);
+    background: var(--paper); border: 1px solid var(--sage-dark); border-radius: 6px;
+    padding: 1px 4px; width: 60px; text-align: center; outline: none; box-sizing: border-box;
   }
 
   .toast{
-    position: fixed;
-    bottom: 24px; left: 50%;
-    transform: translateX(-50%) translateY(20px);
-    background: var(--ink);
-    color: #fff;
-    padding: 12px 20px;
-    border-radius: 999px;
-    font-family:'Inter', sans-serif;
-    font-size: 0.85rem;
-    font-weight: 500;
-    box-shadow: var(--shadow);
-    opacity: 0;
-    pointer-events:none;
-    transition: opacity .25s ease, transform .25s ease;
-    z-index: 50;
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--ink); color: #fff; padding: 12px 20px; border-radius: 999px;
+    font-family:'Inter', sans-serif; font-size: 0.85rem; font-weight: 500;
+    box-shadow: var(--shadow); opacity: 0; pointer-events:none;
+    transition: opacity .25s ease, transform .25s ease; z-index: 50;
   }
   .toast.show{ opacity:1; transform: translateX(-50%) translateY(0); }
 
   .setup-banner{
-    background: #FBEFD9;
-    border: 1px solid #E8B93E;
-    color: #5A430E;
-    padding: 12px 14px;
-    border-radius: var(--radius);
-    font-size: 0.82rem;
-    margin-bottom: 18px;
-    line-height:1.5;
+    background: #FBEFD9; border: 1px solid #E8B93E; color: #5A430E;
+    padding: 12px 14px; border-radius: var(--radius); font-size: 0.82rem;
+    margin-bottom: 18px; line-height:1.5;
   }
   .setup-banner code{ background: rgba(0,0,0,0.06); padding:1px 5px; border-radius:4px; }
 
-  @media (prefers-reduced-motion: reduce){
-    *{ transition: none !important; animation: none !important; }
-  }
-
-  /* En pantallas angostas (celular), el input pasa a su propia fila */
-  @media (max-width: 480px){
-    .add-row{ flex-wrap: wrap; }
-    .add-row input[type=text]{ flex: 1 1 100%; }
-    .add-row .qty-stepper{ flex: 0 0 auto; }
-    .add-row button.add-btn{ flex: 1 1 auto; }
-  }
+  @media (prefers-reduced-motion: reduce){ *{ transition: none !important; animation: none !important; } }
 </style>
 </head>
 <body>
@@ -504,7 +395,7 @@
     <button id="buyBtn" disabled>Compra realizada — llenar despensa</button>
   </section>
 
-  <!-- VISTA 2: ALACENA (CUADRÍCULA) -->
+  <!-- VISTA 2: DESPENSA (CUADRÍCULA) -->
   <section class="view" id="view-alacena">
     <div class="grid" id="alacenaGrid"></div>
     <div id="alacenaEmpty" class="empty-state" style="display:none;">
@@ -516,7 +407,7 @@
 
 <div class="toast" id="toast"></div>
 
-<!-- Firebase -->
+<!-- Firebase (necesario para que TODA la familia vea y edite la MISMA lista en tiempo real) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -591,7 +482,7 @@ function setConnStatus(ok, text){
 }
 
 /* =====================================================================
-   2) MODO LOCAL DE RESPALDO
+   2) MODO LOCAL DE RESPALDO (si no hay Firebase configurado)
    ===================================================================== */
 function initLocalFallback(){
   const saved = localStorage.getItem('alacena_state');
@@ -620,7 +511,9 @@ function listenToData(){
    ===================================================================== */
 function uid(){ return 'i' + Date.now() + Math.random().toString(36).slice(2,7); }
 
-/* Nombre editable */
+/* Nombre editable: al hacer click se convierte en un input de texto.
+   Enter o click afuera guarda; Escape cancela. Ambos casos re-dibujan
+   la lista/cuadrícula desde el estado real, así que es seguro. */
 function editableName(el, currentName, onSave){
   const input = document.createElement('input');
   input.type = 'text';
@@ -644,7 +537,8 @@ function editableName(el, currentName, onSave){
   });
 }
 
-/* Cantidad editable */
+/* Cantidad editable (para productos YA agregados en lista o despensa).
+   currentItem = {cantidad, unidad}. */
 function editableQty(el, currentItem, onSave){
   const input = document.createElement('input');
   input.type = 'number';
@@ -670,7 +564,8 @@ function editableQty(el, currentItem, onSave){
   });
 }
 
-/* Formato de cantidad con conversión a kg */
+/* Gramos se convierten a kilos automáticamente al llegar a 1000.
+   Piezas se muestran tal cual, sin unidad. */
 function formatQty(item){
   if(item.unidad === 'g'){
     if(item.cantidad >= 1000){
@@ -694,9 +589,9 @@ function writeAlacena(newAlacena){
 }
 
 /* =====================================================================
-   4) FILA "AGREGAR PRODUCTO"
+   4) FILA "AGREGAR PRODUCTO" (pza / g, y cantidad inicial)
    ===================================================================== */
-let pendingUnit = 'u';
+let pendingUnit = 'u'; // 'u' = pieza, 'g' = gramos
 const qtyInput = document.getElementById('qtyInput');
 
 document.querySelectorAll('#unitToggle button').forEach(btn=>{
@@ -810,7 +705,7 @@ function sendToLista(id){
    5) RENDER
    ===================================================================== */
 function render(){
-  // Lista de compras - orden: no marcados primero, marcados al final
+  // Lista de compras
   const listEl = document.getElementById('listItems');
   const entries = Object.entries(state.lista || {})
     .sort((a,b)=> (a[1].marcado ? 1 : 0) - (b[1].marcado ? 1 : 0));
@@ -943,6 +838,14 @@ function showToast(msg){
 }
 
 initFirebase();
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(err=>{
+      console.log('No se pudo registrar el service worker:', err);
+    });
+  });
+}
 </script>
 
 <!--
@@ -952,23 +855,17 @@ initFirebase();
 =========================================================================
 
 1. Ve a https://console.firebase.google.com y entra con tu cuenta de Google.
-2. Clic en "Agregar proyecto" (o "Add project"). Ponle un nombre, ej: "alacena-familia".
-   No necesitas activar Google Analytics, puedes desactivarlo.
+2. Clic en "Agregar proyecto". Ponle un nombre, ej: "alacena-familia".
+   No necesitas activar Google Analytics.
 3. Dentro del proyecto, en el menú izquierdo ve a "Compilación" > "Realtime Database".
 4. Clic en "Crear base de datos". Elige la ubicación más cercana.
-5. Cuando pregunte por reglas de seguridad, elige "Comenzar en modo de PRUEBA"
-   (test mode) por ahora — lo cambiaremos en el siguiente paso.
+5. Elige "Comenzar en modo de PRUEBA" por ahora.
 
-5.1. IMPORTANTE — activa el inicio de sesión anónimo:
-   - En el menú izquierdo ve a "Compilación" > "Authentication".
-   - Clic en "Comenzar" (Get started).
-   - En la pestaña "Sign-in method" / "Método de acceso", busca "Anónimo"
-     (Anonymous) en la lista de proveedores, ábrelo, actívalo con el switch
-     y clic en "Guardar".
+5.1. Activa el inicio de sesión anónimo:
+   - Menú izquierdo > "Authentication" > "Comenzar".
+   - Pestaña "Sign-in method" > activa "Anonymous" > "Guardar".
 
-5.2. Ahora sí, pon reglas seguras. Ve a "Realtime Database" > pestaña
-   "Reglas" y reemplaza todo por esto, luego clic en "Publicar":
-
+5.2. Pon reglas seguras en "Realtime Database" > "Reglas":
       {
         "rules": {
           ".read": "auth != null",
@@ -976,46 +873,18 @@ initFirebase();
         }
       }
 
-   (Esto significa: solo alguien que haya iniciado sesión -aunque sea de
-   forma anónima y automática, como hace esta app- puede leer o escribir.
-   Esto bloquea a los bots que escanean bases de datos totalmente públicas.
-   Sigue sin ser una contraseña -cualquiera que abra tu link entra sin
-   pedirle nada-, pero ya no aparece como base de datos abierta al mundo.)
-
-6. Ve a "Configuración del proyecto" (el ícono de engrane arriba a la izquierda)
-   > pestaña "General" > baja hasta "Tus apps" > clic en el ícono </> (Web).
-7. Ponle un apodo a la app (ej. "alacena-web") y clic en "Registrar app".
-   Firebase te mostrará un bloque de código con un objeto llamado
-   "firebaseConfig" que se ve así:
-
-      const firebaseConfig = {
-        apiKey: "AIzaSy...",
-        authDomain: "alacena-familia.firebaseapp.com",
-        databaseURL: "https://alacena-familia-default-rtdb.firebaseio.com",
-        projectId: "alacena-familia",
-        storageBucket: "alacena-familia.appspot.com",
-        messagingSenderId: "123456789",
-        appId: "1:123456789:web:abcdef123456"
-      };
-
-8. Copia ESE objeto completo y pégalo en este archivo index.html, reemplazando
-   el objeto "firebaseConfig" que está cerca del inicio del <script> (búscalo
-   con Ctrl+F). Guarda el archivo.
-
-9. Sube el archivo a GitHub Pages (ver pasos abajo) y ¡listo! Todos los que
-   abran el link verán y editarán la misma lista en tiempo real.
+6. "Configuración del proyecto" > "General" > "Tus apps" > ícono </> (Web).
+7. Copia el objeto "firebaseConfig" que te da Firebase y pégalo en este
+   archivo, reemplazando el que está cerca del inicio del <script>.
 
 -------------------------------------------------------------------------
  CÓMO SUBIRLO A GITHUB PAGES
 -------------------------------------------------------------------------
-1. Crea un repositorio nuevo en GitHub (puede ser privado o público).
-2. Sube este archivo y ponle de nombre exactamente: index.html
-3. Ve a la pestaña "Settings" del repositorio > "Pages" (menú izquierdo).
-4. En "Source" elige la rama "main" y la carpeta "/ (root)". Guarda.
-5. Espera 1-2 minutos. GitHub te dará un link tipo:
-   https://tu-usuario.github.io/nombre-del-repo/
-6. Comparte ese link con tu familia. Cualquiera que lo abra en su celular
-   o computadora verá y podrá modificar la misma lista al instante.
+1. Crea un repositorio en GitHub.
+2. Sube este archivo con el nombre: index.html (junto con manifest.json,
+   sw.js e íconos si los tienes).
+3. Settings > Pages > Source: rama "main", carpeta "/ (root)".
+4. Espera 1-2 minutos y comparte el link con tu familia.
 =========================================================================
 -->
 </body>
