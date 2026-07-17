@@ -1167,7 +1167,7 @@ if('serviceWorker' in navigator){
 }
 
 /* =====================================================================
-   8) ASISTENTE DE VOZ — con soporte para gramos
+   8) ASISTENTE DE VOZ — OPTIMIZADO PARA MÓVILES
    ===================================================================== */
 function normalizeVoice(s){
   return (s||'')
@@ -1202,70 +1202,46 @@ const numberWordsEs = {
   cien:100, ciento:100, doscientos:200, trescientos:300, quinientos:500, mil:1000
 };
 
-// NUEVA FUNCIÓN: detecta si el usuario dijo gramos o kilogramos
 function detectUnit(text, defaultUnit = 'u') {
   const lower = text.toLowerCase();
-  // Primero buscar palabras clave de unidad
-  if (/\b(kg|kilogramos?|kilos?)\b/.test(lower)) {
-    return 'g'; // Guardamos en gramos
-  }
-  if (/\b(g|gramos?|gramo)\b/.test(lower)) {
-    return 'g';
-  }
-  // Productos comunes que normalmente se compran por peso
+  if (/\b(kg|kilogramos?|kilos?)\b/.test(lower)) return 'g';
+  if (/\b(g|gramos?|gramo)\b/.test(lower)) return 'g';
   const pesoComunes = ['carne','pollo','pescado','queso','jamon','jamón','mantequilla','harina','azucar','azúcar',
     'arroz','frijoles','lentejas','garbanzos','papa','patata','cebolla','ajo','fruta','verdura',
     'tomate','lechuga','zanahoria','calabaza','berenjena','pepino','pimiento','chile'];
-  
   for (let p of pesoComunes) {
     if (lower.includes(p)) return 'g';
   }
-  
-  return defaultUnit; // si no, usa la unidad por defecto
+  return defaultUnit;
 }
 
-// NUEVA FUNCIÓN: extrae cantidad y detecta si hay mención de kg/g
 function extractQuantityWithUnit(text) {
-  // Buscar patrones como "500 gramos de", "medio kilo de", "1 kg"
   const kgMatch = text.match(/(\d+\.?\d*)\s*(?:kg|kilos?|kilogramos?)\s+(.+)/);
   if (kgMatch) {
-    const qty = parseFloat(kgMatch[1]) * 1000; // convertir kg a gramos
-    return { qty: Math.round(qty), unit: 'g', rest: kgMatch[2] };
+    return { qty: Math.round(parseFloat(kgMatch[1]) * 1000), unit: 'g', rest: kgMatch[2] };
   }
-  
   const gMatch = text.match(/(\d+\.?\d*)\s*(?:g|gramos?|gramo)\s+(.+)/);
   if (gMatch) {
     return { qty: Math.round(parseFloat(gMatch[1])), unit: 'g', rest: gMatch[2] };
   }
-  
-  // Buscar palabras de peso sin número: "medio kilo", "un kilo"
   const pesoWords = text.match(/(medio|un|una|dos|tres|cuatro|cinco)\s*(?:kg|kilos?|kilogramos?)\s+(.+)/);
   if (pesoWords) {
     const numMap = { medio:0.5, un:1, una:1, dos:2, tres:3, cuatro:4, cinco:5 };
-    const qty = Math.round((numMap[pesoWords[1]] || 1) * 1000);
-    return { qty: qty, unit: 'g', rest: pesoWords[2] };
+    return { qty: Math.round((numMap[pesoWords[1]] || 1) * 1000), unit: 'g', rest: pesoWords[2] };
   }
-  
-  // Si no hay unidad específica, usar la lógica normal de números
   const digitMatch = text.match(/^(\d+\.?\d*)\s+(.+)/);
   if (digitMatch) {
     const qty = parseFloat(digitMatch[1]);
     const rest = digitMatch[2];
-    // Detectar si el resto sugiere que es un producto de peso
     const unit = detectUnit(rest, 'u');
-    if (unit === 'g') {
-      return { qty: Math.round(qty), unit: 'g', rest };
-    }
-    return { qty: Math.round(qty), unit: 'u', rest };
+    return { qty: Math.round(qty), unit, rest };
   }
-  
   const parts = text.split(/\s+/);
   if(parts.length && numberWordsEs[parts[0]] !== undefined){
     const rest = parts.slice(1).join(' ');
     const unit = detectUnit(rest, 'u');
     return { qty: numberWordsEs[parts[0]], unit, rest };
   }
-  
   return { qty: null, unit: 'u', rest: text };
 }
 
@@ -1273,23 +1249,19 @@ function voiceFindEntry(nombre, collection){
   const q = normalizeVoice(nombre);
   const entries = Object.entries(collection || {});
   if(!entries.length || !q) return undefined;
-
   let match = entries.find(([id,item])=> normalizeVoice(item.nombre) === q);
   if(match) return match;
-
   match = entries.find(([id,item])=>{
     const n = normalizeVoice(item.nombre);
     return n.includes(q) || q.includes(n);
   });
   if(match) return match;
-
   let best = null, bestScore = 0;
   entries.forEach(([id,item])=>{
     const score = textSimilarity(normalizeVoice(item.nombre), q);
     if(score > bestScore){ bestScore = score; best = [id,item]; }
   });
   if(best && bestScore >= 0.6) return best;
-
   return undefined;
 }
 
@@ -1297,11 +1269,9 @@ function voiceAdjustQuantity(target, nombre, cantidad, unidad = 'u'){
   const source = target === 'lista' ? state.lista : state.alacena;
   const coll = {...source};
   const found = voiceFindEntry(nombre, coll);
-
   if(found){
     const [id, item] = found;
     item.cantidad = Math.max(0, item.cantidad + cantidad);
-    // Mantener la unidad original del producto encontrado
   } else if(cantidad > 0){
     const id = uid();
     coll[id] = target === 'lista'
@@ -1310,7 +1280,6 @@ function voiceAdjustQuantity(target, nombre, cantidad, unidad = 'u'){
   } else {
     return null;
   }
-
   if(target === 'lista'){ writeLista(coll); } else { writeAlacena(coll); }
   const after = voiceFindEntry(nombre, coll);
   return after ? after[1] : null;
@@ -1331,7 +1300,6 @@ function speakDate(){
   return `Hoy es ${txt}.`;
 }
 
-/* --- Memoria de conversación --- */
 let pendingAction = null;
 let pendingListContext = null;
 
@@ -1342,7 +1310,6 @@ function describeItems(items){
 function processVoiceCommand(rawText){
   const t = normalizeVoice(rawText);
 
-  // 1) ¿Hay una pregunta de sí/no pendiente?
   if(pendingAction){
     const esSi = /^(si|sip|claro|va|dale|porfavor|por favor|hazlo|agregalo|ok|okay|de una vez|obvio)\b/.test(t);
     const esNo = /^(no|no gracias|mejor no|nel|para nada)\b/.test(t);
@@ -1356,12 +1323,11 @@ function processVoiceCommand(rawText){
     }
     if(esNo){
       pendingAction = null;
-      return 'Está bien.';
+      return 'Está bien, no agrego nada.';
     }
     pendingAction = null;
   }
 
-  // 2) Lista paginada
   if(pendingListContext && /(los demas|lo demas|que mas|y los otros|los otros|sigue|continua|el resto|siguientes)/.test(t)){
     const { items, shown, etiqueta } = pendingListContext;
     const restantes = items.slice(shown);
@@ -1381,18 +1347,14 @@ function processVoiceCommand(rawText){
   }
   pendingListContext = null;
 
-  // Hora / fecha
   if(/que hora es|dime la hora|la hora/.test(t)) return speakTime();
   if(/que dia es|que fecha es|en que fecha estamos|fecha de hoy/.test(t)) return speakDate();
 
-  // Resumen de despensa
   if(/despensa/.test(t) && /(que hay|que tengo|todo|resumen)/.test(t)){
     const todos = Object.values(state.alacena || {});
     const conStock = todos.filter(i => i.cantidad > 0);
     const agotados = todos.filter(i => i.cantidad === 0);
-
     if(todos.length === 0) return 'Tu despensa está vacía por ahora.';
-
     let resp = '';
     if(conStock.length > 0){
       const primeraTanda = conStock.slice(0, 8);
@@ -1404,7 +1366,6 @@ function processVoiceCommand(rawText){
     } else {
       resp = 'No te queda nada con existencia en la despensa.';
     }
-
     if(agotados.length > 0){
       const nombres = agotados.slice(0, 8).map(i => i.nombre).join(', ');
       resp += ` Y ya se te acabó: ${nombres}.`;
@@ -1412,7 +1373,6 @@ function processVoiceCommand(rawText){
     return resp;
   }
 
-  // Productos agotados
   if(/(que ya no tengo|que se me acabo|que se acabaron|que esta vacio|que me falta en la despensa|productos agotados)/.test(t)){
     const agotados = Object.values(state.alacena || {}).filter(i => i.cantidad === 0);
     if(agotados.length === 0) return 'No tienes nada agotado en la despensa, todo tiene existencia.';
@@ -1425,7 +1385,6 @@ function processVoiceCommand(rawText){
     return resp;
   }
 
-  // Resumen de lista
   const esComandoAjuste = /^(agrega|agregar|anade|añade|pon|suma|quita|quitar|resta|elimina|remueve)\b/.test(t);
   if(!esComandoAjuste && /(lista|comprar|falta)/.test(t)){
     const items = Object.values(state.lista || {});
@@ -1439,34 +1398,26 @@ function processVoiceCommand(rawText){
     return resp;
   }
 
-  // Agregar / quitar — con detección de gramos
   const addMatch = t.match(/^(agrega|agregar|anade|añade|pon|suma)\s+(.+)/);
   const removeMatch = t.match(/^(quita|quitar|resta|elimina|remueve)\s+(.+)/);
 
   if(addMatch || removeMatch){
     const isAdd = !!addMatch;
     let rest = (addMatch || removeMatch)[2];
-
     let target = 'alacena';
     if(/\bde la lista\b|\ba la lista\b|\blista de compras\b|\blista\b/.test(rest)){
       target = 'lista';
       rest = rest.replace(/\s*(a|de)\s+la\s+lista(\s+de\s+compras)?/,'').trim();
     }
-
-    // Extraer cantidad y unidad usando la nueva función mejorada
     const parsed = extractQuantityWithUnit(rest);
     const cantidad = parsed.qty || 1;
     const unidad = parsed.unit || 'u';
     const nombre = parsed.rest.trim() || rest.trim();
-
     if(!nombre) return 'No entendí qué producto quieres ' + (isAdd ? 'agregar.' : 'quitar.');
-
     const delta = isAdd ? cantidad : -cantidad;
     const updated = voiceAdjustQuantity(target, nombre, delta, unidad);
     const lugar = target === 'lista' ? 'la lista de compras' : 'la despensa';
-    
     const unidadTexto = unidad === 'g' ? 'gramos de ' : '';
-
     if(isAdd){
       return `Listo, agregué ${cantidad} ${unidadTexto}${nombre} a ${lugar}.`;
     } else {
@@ -1475,7 +1426,6 @@ function processVoiceCommand(rawText){
     }
   }
 
-  // Pregunta por cantidad
   let q = t
     .replace(/^(cuanta|cuanto|cuantas|cuantos)\s+/,'')
     .replace(/^(hay|tengo|tenemos|queda|quedan|de)\s+/,'')
@@ -1494,8 +1444,6 @@ function processVoiceCommand(rawText){
     }
     const enLista = voiceFindEntry(q, state.lista);
     if(enLista) return `${enLista[1].nombre} no está en la despensa, pero ya está en tu lista de compras.`;
-    
-    // Detectar si es algo que se compra por peso
     const unit = detectUnit(q, 'u');
     pendingAction = { type: 'addToList', nombre: capitalizeVoice(q), cantidad: unit === 'g' ? 500 : 1, unidad: unit };
     return `No encontré "${capitalizeVoice(q)}" en la despensa. ¿Quieres que lo agregue a la lista de compras?`;
@@ -1504,7 +1452,9 @@ function processVoiceCommand(rawText){
   return 'No entendí bien. Intenta, por ejemplo: "agrega 500 gramos de carne a la lista" o "¿cuánta leche tengo?"';
 }
 
-/* --- Interfaz: abrir/cerrar panel, escuchar y hablar --- */
+/* =====================================================================
+   INTERFAZ DE VOZ — OPTIMIZADA PARA MÓVILES
+   ===================================================================== */
 const voiceFab = document.getElementById('voiceFab');
 const voiceBackdrop = document.getElementById('voiceBackdrop');
 const voiceCloseBtn = document.getElementById('voiceCloseBtn');
@@ -1536,59 +1486,168 @@ function addVoiceBubble(text, who){
   voiceConversation.scrollTop = voiceConversation.scrollHeight;
 }
 
+// ===== SPEECH SYNTHESIS MEJORADA PARA MÓVILES =====
 let speechKeepAlive = null;
-function startSpeechKeepAlive(){
-  stopSpeechKeepAlive();
-  speechKeepAlive = setInterval(()=>{
-    if(speechSynthesis.speaking){
-      speechSynthesis.pause();
-      speechSynthesis.resume();
-    }
-  }, 4000);
-}
+let isSpeaking = false;
+let speakQueue = [];
+let currentUtterance = null;
+
 function stopSpeechKeepAlive(){
   if(speechKeepAlive){ clearInterval(speechKeepAlive); speechKeepAlive = null; }
 }
 
-function voiceSpeak(text){
-  addVoiceBubble(text, 'assistant');
-  voiceStatus.textContent = 'Respondiendo…';
-  voiceMicBtn.classList.remove('listening');
-  voiceMicBtn.classList.add('speaking');
-  conversationMode = false;
+function startSpeechKeepAlive(){
+  stopSpeechKeepAlive();
+  // Keep-alive más agresivo: cada 2 segundos
+  speechKeepAlive = setInterval(()=>{
+    if(speechSynthesis.speaking && !speechSynthesis.pending){
+      try {
+        speechSynthesis.pause();
+        setTimeout(() => speechSynthesis.resume(), 10);
+      } catch(e) {}
+    }
+  }, 2000);
+}
 
-  speechSynthesis.cancel();
+// Dividir texto largo en fragmentos más pequeños para evitar cortes
+function splitTextForSpeech(text, maxLength = 120) {
+  if (text.length <= maxLength) return [text];
+  
+  const fragments = [];
+  let current = '';
+  const sentences = text.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [text];
+  
+  for (let sentence of sentences) {
+    if ((current + sentence).length > maxLength && current.length > 0) {
+      fragments.push(current.trim());
+      current = '';
+    }
+    current += sentence;
+  }
+  if (current.trim()) fragments.push(current.trim());
+  
+  return fragments.length > 0 ? fragments : [text];
+}
 
-  setTimeout(()=>{
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.lang = 'es-MX';
-    const voices = speechSynthesis.getVoices();
-    const esVoice = voices.find(v => v.lang && v.lang.startsWith('es'));
-    if(esVoice) utter.voice = esVoice;
-
-    utter.onstart = ()=> startSpeechKeepAlive();
-
-    utter.onend = ()=>{
+function speakNextInQueue() {
+  if (speakQueue.length === 0 || isSpeaking) {
+    if (speakQueue.length === 0) {
+      // Terminó de hablar
       stopSpeechKeepAlive();
       voiceMicBtn.classList.remove('speaking');
       voiceStatus.textContent = 'Toca el micrófono y pregunta';
       conversationMode = false;
-    };
-    utter.onerror = ()=>{
-      stopSpeechKeepAlive();
-      voiceMicBtn.classList.remove('speaking');
-      voiceStatus.textContent = 'Toca el micrófono y pregunta';
-      conversationMode = false;
-    };
-
+      isSpeaking = false;
+    }
+    return;
+  }
+  
+  isSpeaking = true;
+  const text = speakQueue.shift();
+  
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = 'es-MX';
+  utter.rate = 0.9; // Un poco más lento para mejor estabilidad
+  utter.pitch = 1;
+  
+  // Intentar usar voz en español
+  const voices = speechSynthesis.getVoices();
+  const esVoice = voices.find(v => v.lang && v.lang.startsWith('es'));
+  if (esVoice) utter.voice = esVoice;
+  
+  utter.onstart = () => {
+    startSpeechKeepAlive();
+    voiceMicBtn.classList.add('speaking');
+    voiceStatus.textContent = 'Respondiendo…';
+  };
+  
+  utter.onend = () => {
+    isSpeaking = false;
+    // Esperar un momento antes de la siguiente frase
+    setTimeout(() => {
+      speakNextInQueue();
+    }, 150);
+  };
+  
+  utter.onerror = (e) => {
+    console.warn('Error en SpeechSynthesis:', e);
+    isSpeaking = false;
+    // Si hay error, continuar con la siguiente frase
+    setTimeout(() => {
+      speakNextInQueue();
+    }, 200);
+  };
+  
+  try {
     speechSynthesis.speak(utter);
-  }, 80);
+    currentUtterance = utter;
+  } catch(e) {
+    console.error('Error al hablar:', e);
+    isSpeaking = false;
+    setTimeout(() => {
+      speakNextInQueue();
+    }, 300);
+  }
 }
 
-if(speechSynthesis.onvoiceschanged !== undefined){
-  speechSynthesis.onvoiceschanged = ()=> speechSynthesis.getVoices();
+function voiceSpeak(text) {
+  addVoiceBubble(text, 'assistant');
+  
+  // Cancelar todo lo que esté sonando
+  try {
+    speechSynthesis.cancel();
+  } catch(e) {}
+  
+  // Dividir en fragmentos
+  const fragments = splitTextForSpeech(text, 100);
+  speakQueue = fragments;
+  isSpeaking = false;
+  currentUtterance = null;
+  
+  // Iniciar la cola
+  setTimeout(() => {
+    speakNextInQueue();
+  }, 100);
 }
 
+// Precargar voces al abrir el panel
+function preloadVoices() {
+  if (speechSynthesis.getVoices().length === 0) {
+    speechSynthesis.onvoiceschanged = () => {
+      speechSynthesis.getVoices();
+    };
+  }
+  // Forzar carga de voces
+  try {
+    const dummy = new SpeechSynthesisUtterance(' ');
+    dummy.lang = 'es-MX';
+    speechSynthesis.speak(dummy);
+    setTimeout(() => speechSynthesis.cancel(), 100);
+  } catch(e) {}
+}
+
+// Al abrir el panel, precargar voces
+voiceFab.addEventListener('click', () => {
+  openVoicePanel();
+  preloadVoices();
+});
+
+// Reiniciar keep-alive si se corta
+if (speechSynthesis) {
+  setInterval(() => {
+    // Si no estamos hablando pero hay un utterance activo colgado, reiniciar
+    if (speechSynthesis.speaking && !isSpeaking) {
+      try {
+        speechSynthesis.pause();
+        setTimeout(() => speechSynthesis.resume(), 10);
+      } catch(e) {}
+    }
+  }, 3000);
+}
+
+/* =====================================================================
+   RECONOCIMIENTO DE VOZ
+   ===================================================================== */
 const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
 let conversationMode = false;
 
