@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>La Despensa — Lista de compras familiar</title>
-<meta name="theme-color" content="#1C2B21">
+<meta name="theme-color" content="#395755">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -485,6 +485,131 @@
   @media (prefers-reduced-motion: reduce){
     *{ transition: none !important; animation: none !important; }
   }
+
+  /* =====================================================================
+     ASISTENTE DE VOZ
+     ===================================================================== */
+  #voiceFab{
+    position: fixed;
+    bottom: 22px;
+    right: 22px;
+    width: 58px; height: 58px;
+    border-radius: 50%;
+    border: none;
+    background: var(--ink);
+    color: #fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(28,43,33,0.35);
+    z-index: 40;
+  }
+  #voiceFab svg{ width: 24px; height: 24px; }
+  #voiceFab:active{ transform: scale(0.95); }
+
+  .voice-backdrop{
+    position: fixed;
+    inset: 0;
+    background: rgba(28,43,33,0.45);
+    z-index: 60;
+    display:none;
+    align-items:flex-end;
+  }
+  .voice-backdrop.open{ display:flex; }
+
+  .voice-panel{
+    background: var(--bg);
+    width: 100%;
+    max-height: 82vh;
+    margin: 0 auto;
+    max-width: 520px;
+    border-radius: 22px 22px 0 0;
+    padding: 18px 18px 26px;
+    display:flex;
+    flex-direction: column;
+    box-shadow: 0 -8px 30px rgba(0,0,0,0.25);
+  }
+  .voice-panel-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom: 10px;
+  }
+  .voice-panel-header h2{
+    font-family:'Fraunces', serif;
+    font-style: italic;
+    font-weight: 600;
+    font-size: 1.2rem;
+    margin: 0;
+  }
+  .voice-close{
+    border:none; background: var(--paper); border: 1px solid var(--line);
+    width: 30px; height: 30px; border-radius: 50%;
+    color: var(--ink-soft); cursor:pointer; font-size: 1rem;
+  }
+
+  #voiceConversation{
+    flex: 1;
+    overflow-y: auto;
+    display:flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 8px 0 14px;
+    max-height: 40vh;
+  }
+  .v-bubble{
+    max-width: 88%;
+    padding: 9px 13px;
+    border-radius: var(--radius);
+    font-size: 0.88rem;
+    line-height: 1.4;
+  }
+  .v-bubble.user{ align-self:flex-end; background: var(--ink); color:#fff; border-bottom-right-radius:4px; }
+  .v-bubble.assistant{ align-self:flex-start; background: var(--paper); border:1px solid var(--line); border-bottom-left-radius:4px; }
+
+  .voice-controls{
+    display:flex;
+    flex-direction: column;
+    align-items:center;
+    gap: 10px;
+  }
+  #voiceMicBtn{
+    width: 84px; height: 84px;
+    border-radius: 50%;
+    border: none;
+    background: var(--sage-dark);
+    color: #fff;
+    display:flex; align-items:center; justify-content:center;
+    cursor: pointer;
+    box-shadow: var(--shadow);
+    transition: transform .15s ease, background .2s ease;
+  }
+  #voiceMicBtn svg{ width: 32px; height: 32px; }
+  #voiceMicBtn.listening{ background: var(--tomato); animation: voicePulse 1.4s ease-in-out infinite; }
+  #voiceMicBtn.speaking{ background: var(--citrus); }
+  @keyframes voicePulse{
+    0%,100%{ box-shadow: 0 0 0 0 rgba(193,68,45,0.35), var(--shadow); }
+    50%{ box-shadow: 0 0 0 14px rgba(193,68,45,0), var(--shadow); }
+  }
+  #voiceStatus{
+    font-family:'Fraunces', serif;
+    font-style: italic;
+    font-size: 0.95rem;
+    color: var(--ink-soft);
+    text-align:center;
+    min-height: 1.4em;
+  }
+  .voice-unsupported{
+    background: #FBEFD9;
+    border: 1px solid #E8B93E;
+    color: #5A430E;
+    padding: 12px;
+    border-radius: var(--radius);
+    font-size: 0.8rem;
+    line-height: 1.5;
+    margin-bottom: 12px;
+  }
 </style>
 </head>
 <body>
@@ -552,18 +677,51 @@
   </section>
 </div>
 
+<button id="voiceFab" title="Asistente de voz">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+    <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+    <line x1="12" y1="19" x2="12" y2="23"></line>
+    <line x1="8" y1="23" x2="16" y2="23"></line>
+  </svg>
+</button>
+
+<div class="voice-backdrop" id="voiceBackdrop">
+  <div class="voice-panel">
+    <div class="voice-panel-header">
+      <h2>Pregúntale a la despensa</h2>
+      <button class="voice-close" id="voiceCloseBtn">✕</button>
+    </div>
+
+    <div class="voice-unsupported" id="voiceUnsupported" style="display:none;">
+      ⚠️ Este navegador no permite reconocimiento de voz. Funciona mejor en Chrome (Android o computadora).
+    </div>
+
+    <div id="voiceConversation"></div>
+
+    <div class="voice-controls">
+      <button id="voiceMicBtn" title="Toca para hablar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+          <line x1="12" y1="19" x2="12" y2="23"></line>
+          <line x1="8" y1="23" x2="16" y2="23"></line>
+        </svg>
+      </button>
+      <div id="voiceStatus">Toca el micrófono y pregunta</div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
-<!-- Firebase (necesario para que TODA la familia vea y edite la MISMA lista en tiempo real) -->
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script>
 /* =====================================================================
    1) CONFIGURACIÓN DE FIREBASE
-   -----------------------------------------------------------------
-   Reemplaza el objeto de abajo con el que te dé TU proyecto de Firebase.
-   Instrucciones completas al final de este archivo (comentario grande).
    ===================================================================== */
 const firebaseConfig = {
   apiKey: "AIzaSyDNWZVKsqKBLGRakEeSc8EZO7vjo1XFwkg",
@@ -583,17 +741,12 @@ function initFirebase(){
     if(firebaseConfig.apiKey === "TU_API_KEY"){
       document.getElementById('setupBanner').style.display = 'block';
       setConnStatus(false, 'sin configurar');
-      // Modo local de respaldo (solo en este dispositivo) para que puedas probar la app.
       initLocalFallback();
       return;
     }
     firebase.initializeApp(firebaseConfig);
     db = firebase.database();
 
-    // Inicia sesión anónima automáticamente (sin pedir nada al usuario).
-    // Esto es necesario porque las reglas de la base de datos ahora
-    // exigen estar autenticado (auth != null) para poder leer/escribir,
-    // lo cual bloquea a bots que escanean bases de datos públicas.
     firebase.auth().signInAnonymously().catch((err)=>{
       console.error('Error al iniciar sesión anónima:', err);
       setConnStatus(false, 'error de acceso');
@@ -607,7 +760,6 @@ function initFirebase(){
       }
     });
 
-    // Detecta conexión real con Firebase
     firebase.database().ref('.info/connected').on('value', (snap)=>{
       if(firebaseReady){
         setConnStatus(!!snap.val(), snap.val() ? 'sincronizado' : 'sin conexión');
@@ -626,7 +778,7 @@ function setConnStatus(ok, text){
 }
 
 /* =====================================================================
-   2) ESTADO Y MODO LOCAL DE RESPALDO (si no hay Firebase configurado)
+   2) ESTADO Y MODO LOCAL DE RESPALDO
    ===================================================================== */
 let state = { lista: {}, alacena: {} };
 
@@ -651,12 +803,10 @@ function listenToData(){
 }
 
 /* =====================================================================
-   3) ESCRITURA DE DATOS (funciona igual con Firebase o en modo local)
+   3) ESCRITURA DE DATOS
    ===================================================================== */
 function uid(){ return 'i' + Date.now() + Math.random().toString(36).slice(2,7); }
 
-/* Convierte un elemento de nombre en un campo editable. Al guardar
-   (Enter o click afuera), llama a onSave(nuevoNombre). Con Escape cancela. */
 function editableName(el, currentName, onSave){
   const input = document.createElement('input');
   input.type = 'text';
@@ -683,8 +833,6 @@ function editableName(el, currentName, onSave){
   });
 }
 
-/* Cantidad editable (productos ya agregados en lista o despensa).
-   currentItem = {cantidad, unidad}. */
 function editableQty(el, currentItem, onSave){
   const input = document.createElement('input');
   input.type = 'number';
@@ -713,8 +861,6 @@ function editableQty(el, currentItem, onSave){
   });
 }
 
-/* Gramos se convierten a kilos automáticamente al llegar a 1000.
-   Piezas se muestran tal cual, sin unidad. */
 function formatQty(item){
   if(item.unidad === 'g'){
     if(item.cantidad >= 1000){
@@ -738,9 +884,9 @@ function writeAlacena(newAlacena){
 }
 
 /* =====================================================================
-   4) FILA "AGREGAR PRODUCTO" (pza / g, y cantidad inicial)
+   4) FILA "AGREGAR PRODUCTO"
    ===================================================================== */
-let pendingUnit = 'u'; // 'u' = pieza, 'g' = gramos
+let pendingUnit = 'u';
 const qtyInput = document.getElementById('qtyInput');
 
 document.querySelectorAll('#unitToggle button').forEach(btn=>{
@@ -804,7 +950,6 @@ document.getElementById('buyBtn').addEventListener('click', ()=>{
 
   const alacena = {...state.alacena};
   items.forEach(([id, item])=>{
-    // Si el producto ya existe en la alacena (por nombre), suma cantidades
     const existingId = Object.keys(alacena).find(
       k => alacena[k].nombre.toLowerCase() === item.nombre.toLowerCase()
     );
@@ -855,7 +1000,6 @@ function sendToLista(id){
    5) RENDER
    ===================================================================== */
 function render(){
-  // Lista (los productos marcados/en el carrito van al final)
   const listEl = document.getElementById('listItems');
   const entries = Object.entries(state.lista || {})
     .sort((a,b)=> (a[1].marcado ? 1 : 0) - (b[1].marcado ? 1 : 0));
@@ -914,7 +1058,6 @@ function render(){
     listEl.appendChild(li);
   });
 
-  // Alacena / Despensa
   const gridEl = document.getElementById('alacenaGrid');
   const aEntries = Object.entries(state.alacena || {}).sort((a,b)=> a[1].nombre.localeCompare(b[1].nombre));
   gridEl.innerHTML = '';
@@ -988,9 +1131,7 @@ function showToast(msg){
 }
 
 /* =====================================================================
-   7) PANTALLA COMPLETA (funciona en Android/Chrome; iPhone no lo permite
-   -en iOS usa "Agregar a pantalla de inicio" en su lugar, que ya cubre
-   esta necesidad de forma nativa)
+   7) PANTALLA COMPLETA
    ===================================================================== */
 const fsBtn = document.getElementById('fullscreenBtn');
 const fsIconExpand = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"></path><path d="M21 8V5a2 2 0 0 0-2-2h-3"></path><path d="M3 16v3a2 2 0 0 0 2 2h3"></path><path d="M16 21h3a2 2 0 0 0 2-2v-3"></path></svg>`;
@@ -1017,8 +1158,6 @@ if(document.documentElement.requestFullscreen){
 
 initFirebase();
 
-// Registra el Service Worker: permite que el navegador guarde una copia
-// de la app para poder abrirla aunque no haya internet.
 if('serviceWorker' in navigator){
   window.addEventListener('load', ()=>{
     navigator.serviceWorker.register('sw.js').catch(err=>{
@@ -1026,16 +1165,516 @@ if('serviceWorker' in navigator){
     });
   });
 }
-</script>
 
-<!--
-=========================================================================
- CÓMO CONECTAR ESTA APP A FIREBASE (gratis) PARA QUE TODA TU FAMILIA
- VEA Y EDITE LA MISMA LISTA EN TIEMPO REAL
-=========================================================================
- (Ya está configurada con tu proyecto de Firebase real — esta sección
- es solo referencia por si algún día necesitas reconectarla.)
-=========================================================================
--->
+/* =====================================================================
+   8) ASISTENTE DE VOZ — con soporte para gramos
+   ===================================================================== */
+function normalizeVoice(s){
+  return (s||'')
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[.,;:!¡?¿"'()]/g,'')
+    .replace(/\s+/g,' ')
+    .trim();
+}
+function capitalizeVoice(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
+
+function levenshtein(a, b){
+  const dp = Array.from({length: a.length+1}, () => new Array(b.length+1).fill(0));
+  for(let i=0;i<=a.length;i++) dp[i][0] = i;
+  for(let j=0;j<=b.length;j++) dp[0][j] = j;
+  for(let i=1;i<=a.length;i++){
+    for(let j=1;j<=b.length;j++){
+      dp[i][j] = a[i-1] === b[j-1] ? dp[i-1][j-1] : 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+    }
+  }
+  return dp[a.length][b.length];
+}
+function textSimilarity(a, b){
+  const maxLen = Math.max(a.length, b.length) || 1;
+  return 1 - levenshtein(a, b) / maxLen;
+}
+
+const numberWordsEs = {
+  un:1, uno:1, una:1, dos:2, tres:3, cuatro:4, cinco:5, seis:6, siete:7, ocho:8, nueve:9, diez:10,
+  once:11, doce:12, trece:13, catorce:14, quince:15, dieciseis:16, diecisiete:17, dieciocho:18, diecinueve:19,
+  veinte:20, treinta:30, cuarenta:40, cincuenta:50, sesenta:60, setenta:70, ochenta:80, noventa:90,
+  cien:100, ciento:100, doscientos:200, trescientos:300, quinientos:500, mil:1000
+};
+
+// NUEVA FUNCIÓN: detecta si el usuario dijo gramos o kilogramos
+function detectUnit(text, defaultUnit = 'u') {
+  const lower = text.toLowerCase();
+  // Primero buscar palabras clave de unidad
+  if (/\b(kg|kilogramos?|kilos?)\b/.test(lower)) {
+    return 'g'; // Guardamos en gramos
+  }
+  if (/\b(g|gramos?|gramo)\b/.test(lower)) {
+    return 'g';
+  }
+  // Productos comunes que normalmente se compran por peso
+  const pesoComunes = ['carne','pollo','pescado','queso','jamon','jamón','mantequilla','harina','azucar','azúcar',
+    'arroz','frijoles','lentejas','garbanzos','papa','patata','cebolla','ajo','fruta','verdura',
+    'tomate','lechuga','zanahoria','calabaza','berenjena','pepino','pimiento','chile'];
+  
+  for (let p of pesoComunes) {
+    if (lower.includes(p)) return 'g';
+  }
+  
+  return defaultUnit; // si no, usa la unidad por defecto
+}
+
+// NUEVA FUNCIÓN: extrae cantidad y detecta si hay mención de kg/g
+function extractQuantityWithUnit(text) {
+  // Buscar patrones como "500 gramos de", "medio kilo de", "1 kg"
+  const kgMatch = text.match(/(\d+\.?\d*)\s*(?:kg|kilos?|kilogramos?)\s+(.+)/);
+  if (kgMatch) {
+    const qty = parseFloat(kgMatch[1]) * 1000; // convertir kg a gramos
+    return { qty: Math.round(qty), unit: 'g', rest: kgMatch[2] };
+  }
+  
+  const gMatch = text.match(/(\d+\.?\d*)\s*(?:g|gramos?|gramo)\s+(.+)/);
+  if (gMatch) {
+    return { qty: Math.round(parseFloat(gMatch[1])), unit: 'g', rest: gMatch[2] };
+  }
+  
+  // Buscar palabras de peso sin número: "medio kilo", "un kilo"
+  const pesoWords = text.match(/(medio|un|una|dos|tres|cuatro|cinco)\s*(?:kg|kilos?|kilogramos?)\s+(.+)/);
+  if (pesoWords) {
+    const numMap = { medio:0.5, un:1, una:1, dos:2, tres:3, cuatro:4, cinco:5 };
+    const qty = Math.round((numMap[pesoWords[1]] || 1) * 1000);
+    return { qty: qty, unit: 'g', rest: pesoWords[2] };
+  }
+  
+  // Si no hay unidad específica, usar la lógica normal de números
+  const digitMatch = text.match(/^(\d+\.?\d*)\s+(.+)/);
+  if (digitMatch) {
+    const qty = parseFloat(digitMatch[1]);
+    const rest = digitMatch[2];
+    // Detectar si el resto sugiere que es un producto de peso
+    const unit = detectUnit(rest, 'u');
+    if (unit === 'g') {
+      return { qty: Math.round(qty), unit: 'g', rest };
+    }
+    return { qty: Math.round(qty), unit: 'u', rest };
+  }
+  
+  const parts = text.split(/\s+/);
+  if(parts.length && numberWordsEs[parts[0]] !== undefined){
+    const rest = parts.slice(1).join(' ');
+    const unit = detectUnit(rest, 'u');
+    return { qty: numberWordsEs[parts[0]], unit, rest };
+  }
+  
+  return { qty: null, unit: 'u', rest: text };
+}
+
+function voiceFindEntry(nombre, collection){
+  const q = normalizeVoice(nombre);
+  const entries = Object.entries(collection || {});
+  if(!entries.length || !q) return undefined;
+
+  let match = entries.find(([id,item])=> normalizeVoice(item.nombre) === q);
+  if(match) return match;
+
+  match = entries.find(([id,item])=>{
+    const n = normalizeVoice(item.nombre);
+    return n.includes(q) || q.includes(n);
+  });
+  if(match) return match;
+
+  let best = null, bestScore = 0;
+  entries.forEach(([id,item])=>{
+    const score = textSimilarity(normalizeVoice(item.nombre), q);
+    if(score > bestScore){ bestScore = score; best = [id,item]; }
+  });
+  if(best && bestScore >= 0.6) return best;
+
+  return undefined;
+}
+
+function voiceAdjustQuantity(target, nombre, cantidad, unidad = 'u'){
+  const source = target === 'lista' ? state.lista : state.alacena;
+  const coll = {...source};
+  const found = voiceFindEntry(nombre, coll);
+
+  if(found){
+    const [id, item] = found;
+    item.cantidad = Math.max(0, item.cantidad + cantidad);
+    // Mantener la unidad original del producto encontrado
+  } else if(cantidad > 0){
+    const id = uid();
+    coll[id] = target === 'lista'
+      ? { nombre: capitalizeVoice(nombre), cantidad: Math.max(1, cantidad), unidad: unidad, marcado: false }
+      : { nombre: capitalizeVoice(nombre), cantidad: Math.max(1, cantidad), unidad: unidad };
+  } else {
+    return null;
+  }
+
+  if(target === 'lista'){ writeLista(coll); } else { writeAlacena(coll); }
+  const after = voiceFindEntry(nombre, coll);
+  return after ? after[1] : null;
+}
+
+function speakTime(){
+  const now = new Date();
+  const horas = now.getHours();
+  const minutos = now.getMinutes();
+  const h12 = ((horas % 12) || 12);
+  const periodo = horas < 12 ? 'de la mañana' : (horas < 19 ? 'de la tarde' : 'de la noche');
+  const minTxt = minutos === 0 ? 'en punto' : `con ${minutos} minutos`;
+  return `Son las ${h12} ${minTxt} ${periodo}.`;
+}
+function speakDate(){
+  const now = new Date();
+  const txt = now.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  return `Hoy es ${txt}.`;
+}
+
+/* --- Memoria de conversación --- */
+let pendingAction = null;
+let pendingListContext = null;
+
+function describeItems(items){
+  return items.map(i => `${i.nombre}: ${formatQty(i)}`).join(', ');
+}
+
+function processVoiceCommand(rawText){
+  const t = normalizeVoice(rawText);
+
+  // 1) ¿Hay una pregunta de sí/no pendiente?
+  if(pendingAction){
+    const esSi = /^(si|sip|claro|va|dale|porfavor|por favor|hazlo|agregalo|ok|okay|de una vez|obvio)\b/.test(t);
+    const esNo = /^(no|no gracias|mejor no|nel|para nada)\b/.test(t);
+    if(esSi){
+      const accion = pendingAction;
+      pendingAction = null;
+      if(accion.type === 'addToList'){
+        voiceAdjustQuantity('lista', accion.nombre, accion.cantidad, accion.unidad || 'u');
+        return `Listo, agregué ${accion.cantidad} ${accion.unidad === 'g' ? 'gramos de' : ''} ${accion.nombre} a la lista de compras.`;
+      }
+    }
+    if(esNo){
+      pendingAction = null;
+      return 'Está bien.';
+    }
+    pendingAction = null;
+  }
+
+  // 2) Lista paginada
+  if(pendingListContext && /(los demas|lo demas|que mas|y los otros|los otros|sigue|continua|el resto|siguientes)/.test(t)){
+    const { items, shown, etiqueta } = pendingListContext;
+    const restantes = items.slice(shown);
+    if(restantes.length === 0){
+      pendingListContext = null;
+      return `Eso era todo lo de ${etiqueta}.`;
+    }
+    const siguienteTanda = restantes.slice(0, 8);
+    pendingListContext.shown += siguienteTanda.length;
+    let resp = 'También tienes: ' + describeItems(siguienteTanda) + '.';
+    if(pendingListContext.shown < items.length){
+      resp += ` Hay ${items.length - pendingListContext.shown} productos más, dime "los demás" para seguir.`;
+    } else {
+      pendingListContext = null;
+    }
+    return resp;
+  }
+  pendingListContext = null;
+
+  // Hora / fecha
+  if(/que hora es|dime la hora|la hora/.test(t)) return speakTime();
+  if(/que dia es|que fecha es|en que fecha estamos|fecha de hoy/.test(t)) return speakDate();
+
+  // Resumen de despensa
+  if(/despensa/.test(t) && /(que hay|que tengo|todo|resumen)/.test(t)){
+    const todos = Object.values(state.alacena || {});
+    const conStock = todos.filter(i => i.cantidad > 0);
+    const agotados = todos.filter(i => i.cantidad === 0);
+
+    if(todos.length === 0) return 'Tu despensa está vacía por ahora.';
+
+    let resp = '';
+    if(conStock.length > 0){
+      const primeraTanda = conStock.slice(0, 8);
+      resp = 'En la despensa tienes ' + describeItems(primeraTanda) + '.';
+      if(conStock.length > 8){
+        pendingListContext = { items: conStock, shown: 8, etiqueta: 'la despensa' };
+        resp += ` Hay ${conStock.length - 8} productos más, dime "los demás" si quieres que siga.`;
+      }
+    } else {
+      resp = 'No te queda nada con existencia en la despensa.';
+    }
+
+    if(agotados.length > 0){
+      const nombres = agotados.slice(0, 8).map(i => i.nombre).join(', ');
+      resp += ` Y ya se te acabó: ${nombres}.`;
+    }
+    return resp;
+  }
+
+  // Productos agotados
+  if(/(que ya no tengo|que se me acabo|que se acabaron|que esta vacio|que me falta en la despensa|productos agotados)/.test(t)){
+    const agotados = Object.values(state.alacena || {}).filter(i => i.cantidad === 0);
+    if(agotados.length === 0) return 'No tienes nada agotado en la despensa, todo tiene existencia.';
+    const primeraTanda = agotados.slice(0, 8);
+    let resp = 'Ya no tienes: ' + primeraTanda.map(i=>i.nombre).join(', ') + '.';
+    if(agotados.length > 8){
+      pendingListContext = { items: agotados, shown: 8, etiqueta: 'lo que se acabó' };
+      resp += ` Hay ${agotados.length - 8} más, dime "los demás" si quieres que siga.`;
+    }
+    return resp;
+  }
+
+  // Resumen de lista
+  const esComandoAjuste = /^(agrega|agregar|anade|añade|pon|suma|quita|quitar|resta|elimina|remueve)\b/.test(t);
+  if(!esComandoAjuste && /(lista|comprar|falta)/.test(t)){
+    const items = Object.values(state.lista || {});
+    if(items.length === 0) return 'No tienes nada pendiente en tu lista de compras.';
+    const primeraTanda = items.slice(0, 8);
+    let resp = 'Te falta comprar: ' + items.slice(0,8).map(i => `${i.nombre} (${formatQty(i)})`).join(', ') + '.';
+    if(items.length > 8){
+      pendingListContext = { items: items, shown: 8, etiqueta: 'la lista de compras' };
+      resp += ` Hay ${items.length - 8} productos más, dime "los demás" si quieres que siga.`;
+    }
+    return resp;
+  }
+
+  // Agregar / quitar — con detección de gramos
+  const addMatch = t.match(/^(agrega|agregar|anade|añade|pon|suma)\s+(.+)/);
+  const removeMatch = t.match(/^(quita|quitar|resta|elimina|remueve)\s+(.+)/);
+
+  if(addMatch || removeMatch){
+    const isAdd = !!addMatch;
+    let rest = (addMatch || removeMatch)[2];
+
+    let target = 'alacena';
+    if(/\bde la lista\b|\ba la lista\b|\blista de compras\b|\blista\b/.test(rest)){
+      target = 'lista';
+      rest = rest.replace(/\s*(a|de)\s+la\s+lista(\s+de\s+compras)?/,'').trim();
+    }
+
+    // Extraer cantidad y unidad usando la nueva función mejorada
+    const parsed = extractQuantityWithUnit(rest);
+    const cantidad = parsed.qty || 1;
+    const unidad = parsed.unit || 'u';
+    const nombre = parsed.rest.trim() || rest.trim();
+
+    if(!nombre) return 'No entendí qué producto quieres ' + (isAdd ? 'agregar.' : 'quitar.');
+
+    const delta = isAdd ? cantidad : -cantidad;
+    const updated = voiceAdjustQuantity(target, nombre, delta, unidad);
+    const lugar = target === 'lista' ? 'la lista de compras' : 'la despensa';
+    
+    const unidadTexto = unidad === 'g' ? 'gramos de ' : '';
+
+    if(isAdd){
+      return `Listo, agregué ${cantidad} ${unidadTexto}${nombre} a ${lugar}.`;
+    } else {
+      if(updated === null) return `No tenía ${nombre} en ${lugar}, así que no hay nada que quitar.`;
+      return `Listo, quité ${cantidad} ${unidadTexto}${nombre} de ${lugar}. Ahora quedan ${formatQty(updated)}.`;
+    }
+  }
+
+  // Pregunta por cantidad
+  let q = t
+    .replace(/^(cuanta|cuanto|cuantas|cuantos)\s+/,'')
+    .replace(/^(hay|tengo|tenemos|queda|quedan|de)\s+/,'')
+    .replace(/\s+(hay|tengo|tenemos|queda|quedan)(\s+en\s+la\s+despensa)?\??$/,'')
+    .trim();
+
+  if(q){
+    const found = voiceFindEntry(q, state.alacena);
+    if(found){
+      const item = found[1];
+      if(item.cantidad === 0){
+        pendingAction = { type: 'addToList', nombre: item.nombre, cantidad: 1, unidad: item.unidad };
+        return `Se te acabó ${item.nombre}. ¿Quieres que lo agregue a la lista?`;
+      }
+      return `Tienes ${formatQty(item)} de ${item.nombre} en la despensa.`;
+    }
+    const enLista = voiceFindEntry(q, state.lista);
+    if(enLista) return `${enLista[1].nombre} no está en la despensa, pero ya está en tu lista de compras.`;
+    
+    // Detectar si es algo que se compra por peso
+    const unit = detectUnit(q, 'u');
+    pendingAction = { type: 'addToList', nombre: capitalizeVoice(q), cantidad: unit === 'g' ? 500 : 1, unidad: unit };
+    return `No encontré "${capitalizeVoice(q)}" en la despensa. ¿Quieres que lo agregue a la lista de compras?`;
+  }
+
+  return 'No entendí bien. Intenta, por ejemplo: "agrega 500 gramos de carne a la lista" o "¿cuánta leche tengo?"';
+}
+
+/* --- Interfaz: abrir/cerrar panel, escuchar y hablar --- */
+const voiceFab = document.getElementById('voiceFab');
+const voiceBackdrop = document.getElementById('voiceBackdrop');
+const voiceCloseBtn = document.getElementById('voiceCloseBtn');
+const voiceMicBtn = document.getElementById('voiceMicBtn');
+const voiceStatus = document.getElementById('voiceStatus');
+const voiceConversation = document.getElementById('voiceConversation');
+
+function openVoicePanel(){ voiceBackdrop.classList.add('open'); }
+
+let stopListeningFn = null;
+function closeVoicePanel(){
+  if(stopListeningFn) stopListeningFn();
+  stopSpeechKeepAlive();
+  voiceBackdrop.classList.remove('open');
+  speechSynthesis.cancel();
+  voiceMicBtn.classList.remove('listening','speaking');
+  voiceStatus.textContent = 'Toca el micrófono y pregunta';
+  conversationMode = false;
+}
+voiceFab.addEventListener('click', openVoicePanel);
+voiceCloseBtn.addEventListener('click', closeVoicePanel);
+voiceBackdrop.addEventListener('click', (e)=>{ if(e.target === voiceBackdrop) closeVoicePanel(); });
+
+function addVoiceBubble(text, who){
+  const div = document.createElement('div');
+  div.className = 'v-bubble ' + who;
+  div.textContent = text;
+  voiceConversation.appendChild(div);
+  voiceConversation.scrollTop = voiceConversation.scrollHeight;
+}
+
+let speechKeepAlive = null;
+function startSpeechKeepAlive(){
+  stopSpeechKeepAlive();
+  speechKeepAlive = setInterval(()=>{
+    if(speechSynthesis.speaking){
+      speechSynthesis.pause();
+      speechSynthesis.resume();
+    }
+  }, 4000);
+}
+function stopSpeechKeepAlive(){
+  if(speechKeepAlive){ clearInterval(speechKeepAlive); speechKeepAlive = null; }
+}
+
+function voiceSpeak(text){
+  addVoiceBubble(text, 'assistant');
+  voiceStatus.textContent = 'Respondiendo…';
+  voiceMicBtn.classList.remove('listening');
+  voiceMicBtn.classList.add('speaking');
+  conversationMode = false;
+
+  speechSynthesis.cancel();
+
+  setTimeout(()=>{
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = 'es-MX';
+    const voices = speechSynthesis.getVoices();
+    const esVoice = voices.find(v => v.lang && v.lang.startsWith('es'));
+    if(esVoice) utter.voice = esVoice;
+
+    utter.onstart = ()=> startSpeechKeepAlive();
+
+    utter.onend = ()=>{
+      stopSpeechKeepAlive();
+      voiceMicBtn.classList.remove('speaking');
+      voiceStatus.textContent = 'Toca el micrófono y pregunta';
+      conversationMode = false;
+    };
+    utter.onerror = ()=>{
+      stopSpeechKeepAlive();
+      voiceMicBtn.classList.remove('speaking');
+      voiceStatus.textContent = 'Toca el micrófono y pregunta';
+      conversationMode = false;
+    };
+
+    speechSynthesis.speak(utter);
+  }, 80);
+}
+
+if(speechSynthesis.onvoiceschanged !== undefined){
+  speechSynthesis.onvoiceschanged = ()=> speechSynthesis.getVoices();
+}
+
+const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+let conversationMode = false;
+
+if(!SpeechRecognitionAPI){
+  document.getElementById('voiceUnsupported').style.display = 'block';
+  voiceMicBtn.disabled = true;
+  voiceMicBtn.style.opacity = 0.4;
+} else {
+  const recognition = new SpeechRecognitionAPI();
+  recognition.lang = 'es-MX';
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+  recognition.continuous = false;
+  let vListening = false;
+  let stoppingOnPurpose = false;
+
+  function startListening(){
+    if(vListening) return;
+    speechSynthesis.cancel();
+    conversationMode = true;
+    try{ recognition.start(); }catch(e){}
+  }
+  function stopListening(){
+    stoppingOnPurpose = true;
+    conversationMode = false;
+    try{ recognition.stop(); }catch(e){}
+  }
+
+  voiceMicBtn.addEventListener('click', ()=>{
+    if(conversationMode && vListening){
+      stopListening();
+      voiceStatus.textContent = 'Toca para hablar de nuevo';
+      voiceMicBtn.classList.remove('listening');
+    } else {
+      stoppingOnPurpose = false;
+      startListening();
+    }
+  });
+
+  recognition.addEventListener('start', ()=>{
+    vListening = true;
+    voiceMicBtn.classList.add('listening');
+    voiceStatus.textContent = 'Escuchando…';
+  });
+
+  recognition.addEventListener('result', (event)=>{
+    const transcript = event.results[0][0].transcript;
+    addVoiceBubble(transcript, 'user');
+    let respuesta;
+    try{
+      respuesta = processVoiceCommand(transcript);
+    }catch(e){
+      console.error('Error del asistente:', e);
+      respuesta = 'Tuve un problema entendiendo eso, ¿puedes repetirlo?';
+    }
+    voiceSpeak(respuesta || 'No entendí bien, ¿puedes repetirlo?');
+  });
+
+  recognition.addEventListener('error', (event)=>{
+    vListening = false;
+    voiceMicBtn.classList.remove('listening');
+    conversationMode = false;
+    if(event.error === 'no-speech'){
+      voiceStatus.textContent = 'No te escuché, toca el micrófono para intentar de nuevo';
+    } else if(event.error === 'not-allowed' || event.error === 'permission-denied'){
+      voiceStatus.textContent = 'Permite el acceso al micrófono';
+    } else if(event.error === 'aborted'){
+      // detenido a propósito
+    } else {
+      voiceStatus.textContent = 'Hubo un problema, toca el micrófono para intentar de nuevo';
+    }
+    stoppingOnPurpose = false;
+  });
+
+  recognition.addEventListener('end', ()=>{
+    vListening = false;
+    voiceMicBtn.classList.remove('listening');
+    if(!stoppingOnPurpose){
+      voiceStatus.textContent = 'Toca el micrófono y pregunta';
+    }
+    stoppingOnPurpose = false;
+    conversationMode = false;
+  });
+
+  stopListeningFn = stopListening;
+}
+</script>
 </body>
 </html>
